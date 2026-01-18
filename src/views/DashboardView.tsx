@@ -1,8 +1,20 @@
 import React from 'react';
 import { useTournament } from '../context/TournamentContext';
 
-const DashboardView: React.FC = () => {
-    const { teams, matches, currentRound } = useTournament();
+interface DashboardViewProps {
+    onNavigate: (view: 'setup' | 'admin') => void;
+}
+
+const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
+    const { teams, matches, currentRound, loading } = useTournament();
+
+    if (loading) {
+        return (
+            <div style={{ padding: '50px', textAlign: 'center' }}>
+                <h2 className="logo">Loading...</h2>
+            </div>
+        );
+    }
 
     const active = teams.filter(t => t.status === 'active');
     const eliminated = teams.filter(t => t.status === 'eliminated' || t.status === 'buyback-pending');
@@ -18,12 +30,7 @@ const DashboardView: React.FC = () => {
                     <h2 style={{ marginBottom: '20px' }}>No Tournament Active</h2>
                     <button
                         className="btn btn-primary btn-large"
-                        onClick={() => document.querySelector<HTMLButtonElement>('.nav-btn:nth-child(1)')?.click()} // Hacky but works since we lifted nav state
-                    // Better: We should probably just tell user to click Setup, or if we had navigation context.
-                    // Since 'setView' isn't passed here, let's use a global event or just text guidance.
-                    // Actually, since we are in a rush, let's just make sure the user knows where to click.
-                    // Wait, I can pass a callback prop if I edit App.tsx, but I want to minimize diffs.
-                    // Let's use window.location hash or just text arrow.
+                        onClick={() => onNavigate('setup')}
                     >
                         Get Started in Registration 📝
                     </button>
@@ -35,7 +42,7 @@ const DashboardView: React.FC = () => {
                 <div className="card" style={{ borderLeft: '4px solid var(--primary)', background: 'linear-gradient(90deg, rgba(0,255,136,0.05), transparent)' }}>
                     <div className="card-header">
                         <h3 className="card-title">Action Required</h3>
-                        <button className="btn btn-primary" onClick={() => document.querySelector<HTMLButtonElement>('.nav-btn:nth-child(2)')?.click()}>
+                        <button className="btn btn-primary" onClick={() => onNavigate('admin')}>
                             Go to Control Panel →
                         </button>
                     </div>

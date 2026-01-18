@@ -43,7 +43,7 @@ const AppContent: React.FC = () => {
       {/* Main Views */}
       {view === 'setup' && <SetupView />}
       {view === 'admin' && <AdminView />}
-      {view === 'dashboard' && <DashboardView />}
+      {view === 'dashboard' && <DashboardView onNavigate={(target) => handleNav(target)} />}
       {view === 'bracket' && <BracketView />}
     </Layout>
   );
