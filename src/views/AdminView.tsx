@@ -38,7 +38,9 @@ const AdminView: React.FC = () => {
     return (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
+
             {/* ACTION BAR / HEADER */}
+            {/* V1.1 Control Panel */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h1 style={{ fontSize: '1.8rem', margin: 0 }}>Control Panel</h1>
                 <div style={{ display: 'flex', gap: '10px' }}>
