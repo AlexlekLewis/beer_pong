@@ -35,7 +35,7 @@ const AdminView: React.FC = () => {
     const isRoundComplete = roundMatches.length > 0 && roundMatches.every(m => m.completed);
 
     return (
-    return (
+
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
             {/* ACTION BAR / HEADER */}
