@@ -30,12 +30,12 @@ const AdminView: React.FC = () => {
     // Status filters
     const active = teams.filter(t => t.status === 'active');
     const eliminated = teams.filter(t => t.status === 'eliminated');
-    const pending = teams.filter(t => t.status === 'buyback-pending');
+    // pending is unused in current layout
+    // const pending = teams.filter(t => t.status === 'buyback-pending');
 
     const isRoundComplete = roundMatches.length > 0 && roundMatches.every(m => m.completed);
 
     return (
-
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
             {/* ACTION BAR / HEADER */}

@@ -63,7 +63,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onSelect, completed }) => 
                 {match.team2 && (
                     <div
                         className={`match-team ${match.winner?.id === match.team2.id ? 'winner' : ''} ${match.loser?.id === match.team2.id ? 'loser' : ''}`}
-                        onClick={() => !isCompleted && onSelect && onSelect(match.id, match.team2.id)}
+                        onClick={() => !isCompleted && onSelect && match.team2 && onSelect(match.id, match.team2.id)}
                         style={{ cursor: isCompleted || !onSelect ? 'default' : 'pointer' }}
                     >
                         <div className="team-info">

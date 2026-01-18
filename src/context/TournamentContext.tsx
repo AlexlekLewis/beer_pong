@@ -60,7 +60,7 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
 
         const initSupabase = async () => {
             // Fetch initial state
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('tournament_state')
                 .select('data')
                 .eq('id', TOURNAMENT_ID)
