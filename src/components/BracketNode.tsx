@@ -49,7 +49,7 @@ const BracketNode: React.FC<BracketNodeProps> = ({ match, x, y, width, height, o
             </div>
 
             {/* Team 2 */}
-            <div className={`flex justify-between items-center px-4 py-2 ${winner?.id === team2.id ? 'bg-[var(--success)]/5 rounded-b-xl' : ''}`}>
+            <div className={`flex justify-between items-center px-4 py-2 ${winner?.id === team2?.id ? 'bg-[var(--success)]/5 rounded-b-xl' : ''}`}>
                 <div className="flex items-center gap-2 overflow-hidden">
                     {team2 ? (
                         <>

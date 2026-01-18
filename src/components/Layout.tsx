@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react';
 import Sidebar from './Sidebar';
 
-type ViewMode = 'admin' | 'dashboard' | 'bracket';
+type ViewMode = 'setup' | 'admin' | 'dashboard' | 'bracket';
 
 interface LayoutProps {
     children: ReactNode;
