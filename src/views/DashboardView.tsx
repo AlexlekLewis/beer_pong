@@ -10,8 +10,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
     if (loading) {
         return (
-            <div style={{ padding: '50px', textAlign: 'center' }}>
-                <h2 className="logo">Loading...</h2>
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <h2 className="text-3xl font-bold text-gray-500 animate-pulse">Loading...</h2>
             </div>
         );
     }
@@ -23,104 +23,136 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     const top = [...teams].sort((a, b) => b.wins - a.wins).slice(0, 5);
 
     return (
-        <div>
-            {/* Navigation Helpers based on state */}
+        <div className="max-w-6xl mx-auto px-4 pb-12">
+
+            {/* NO TOURNAMENT STATE */}
             {teams.length < 2 && (
-                <div style={{ textAlign: 'center', margin: '40px 0', padding: '40px', border: '2px dashed var(--text-dim)', borderRadius: '8px' }}>
-                    <h2 style={{ marginBottom: '20px' }}>No Tournament Active</h2>
+                <div className="text-center py-20 px-6 border-2 border-dashed border-gray-700 rounded-2xl bg-gray-900/50">
+                    <h2 className="text-3xl font-bold mb-6 text-gray-300">No Tournament Active</h2>
                     <button
-                        className="btn btn-primary btn-large"
+                        className="bg-green-500 hover:bg-green-400 text-black font-bold text-xl py-4 px-10 rounded-xl shadow-lg shadow-green-900/40 transform hover:scale-105 transition-all"
                         onClick={() => onNavigate('setup')}
                     >
                         Get Started in Registration 📝
                     </button>
-                    <p style={{ marginTop: '10px', color: 'var(--text-dim)' }}>Go to the <b>Registration</b> tab to add teams.</p>
+                    <p className="mt-4 text-gray-500">Go to the <b>Registration</b> tab to add teams.</p>
                 </div>
             )}
 
+            {/* ACTION BANNER */}
             {currentRound > 0 && matches.some(m => !m.completed) && (
-                <div className="card" style={{ borderLeft: '4px solid var(--primary)', background: 'linear-gradient(90deg, rgba(0,255,136,0.05), transparent)' }}>
-                    <div className="card-header">
-                        <h3 className="card-title">Action Required</h3>
-                        <button className="btn btn-primary" onClick={() => onNavigate('admin')}>
-                            Go to Control Panel →
+                <div onClick={() => onNavigate('admin')} className="mb-8 bg-gradient-to-r from-green-900/40 to-blue-900/40 border-l-4 border-green-500 rounded-r-xl p-8 cursor-pointer hover:bg-white/5 transition-all group relative overflow-hidden">
+                    <div className="absolute inset-0 bg-green-500/5 group-hover:bg-green-500/10 transition-colors"></div>
+                    <div className="relative flex justify-between items-center">
+                        <div>
+                            <h3 className="text-2xl font-bold text-green-400 mb-2 flex items-center gap-3">
+                                <span className="animate-pulse">●</span> Action Required
+                            </h3>
+                            <p className="text-gray-300 text-lg">Matches are waiting! Go to the <b>Control Panel</b> to manage the round.</p>
+                        </div>
+                        <button className="bg-green-500 text-black font-bold py-3 px-8 rounded-lg shadow-lg group-hover:scale-105 transition-transform">
+                            Open Control Panel →
                         </button>
                     </div>
-                    <p>Matches are waiting! Go to <b>Control</b> to enter results and advance the round.</p>
                 </div>
             )}
 
-            <div className="stats-grid">
-                <div className="stat-card" style={{ '--stat-color': 'var(--accent)', '--stat-glow': 'var(--accent-glow)' } as React.CSSProperties}>
-                    <div className="stat-value">{currentRound}</div>
-                    <div className="stat-label">Round</div>
+            {/* HIGH VISIBILITY STATS GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
+                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden group hover:border-[#00d4ff] transition-colors">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#00d4ff]"></div>
+                    <div className="text-6xl font-extrabold text-[#00d4ff] mb-2 drop-shadow-[0_0_15px_rgba(0,212,255,0.4)]">{currentRound}</div>
+                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Round</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-value">{active.length}</div>
-                    <div className="stat-label">Remaining</div>
+
+                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-white transition-colors">
+                    <div className="text-6xl font-extrabold text-white mb-2">{active.length}</div>
+                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Remaining</div>
                 </div>
-                <div className="stat-card" style={{ '--stat-color': 'var(--danger)', '--stat-glow': 'rgba(255,51,102,0.4)' } as React.CSSProperties}>
-                    <div className="stat-value">{eliminated.length}</div>
-                    <div className="stat-label">Eliminated</div>
+
+                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-[#ff3366] transition-colors">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#ff3366]"></div>
+                    <div className="text-6xl font-extrabold text-[#ff3366] mb-2 drop-shadow-[0_0_15px_rgba(255,51,102,0.4)]">{eliminated.length}</div>
+                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Eliminated</div>
                 </div>
-                <div className="stat-card" style={{ '--stat-color': 'var(--secondary)', '--stat-glow': 'var(--secondary-glow)' } as React.CSSProperties}>
-                    <div className="stat-value">{buyBacks}</div>
-                    <div className="stat-label">Buy-Backs</div>
+
+                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-[#ff00aa] transition-colors">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#ff00aa]"></div>
+                    <div className="text-6xl font-extrabold text-[#ff00aa] mb-2 drop-shadow-[0_0_15px_rgba(255,0,170,0.4)]">{buyBacks}</div>
+                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Buy-Backs</div>
                 </div>
-                <div className="stat-card" style={{ '--stat-color': 'var(--warning)', '--stat-glow': 'var(--warning-glow)' } as React.CSSProperties}>
-                    <div className="stat-value">{games}</div>
-                    <div className="stat-label">Games</div>
+
+                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-[#ffaa00] transition-colors">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#ffaa00]"></div>
+                    <div className="text-6xl font-extrabold text-[#ffaa00] mb-2 drop-shadow-[0_0_15px_rgba(255,170,0,0.4)]">{games}</div>
+                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Games</div>
                 </div>
             </div>
 
-            <div className="card">
-                <div className="status-section">
-                    <div className="status-header">
-                        <span className="status-dot active"></span>
-                        <span className="status-title">Still In</span>
-                        <span className="status-count">({active.length})</span>
-                    </div>
-                    <div className="team-status-grid">
-                        {active.map(t => (
-                            <div key={t.id} className="team-status-chip">
-                                <span>{t.name}</span>
-                                <span className="record">{t.wins}W-{t.losses}L</span>
-                                {t.buyBacks > 0 && <span className="buyback-badge">×{t.buyBacks}</span>}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {eliminated.length > 0 && (
-                    <div className="status-section">
-                        <div className="status-header">
-                            <span className="status-dot eliminated"></span>
-                            <span className="status-title">Out</span>
-                            <span className="status-count">({eliminated.length})</span>
+            <div className="grid lg:grid-cols-3 gap-8">
+                {/* STATUS BOARD */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Active Teams */}
+                    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-3 h-3 rounded-full bg-[#00ff88] shadow-[0_0_10px_#00ff88] animate-pulse"></div>
+                            <h3 className="text-xl font-bold uppercase tracking-widest">Still In Competition ({active.length})</h3>
                         </div>
-                        <div className="team-status-grid">
-                            {eliminated.map(t => (
-                                <div key={t.id} className="team-status-chip" style={{ opacity: 0.6 }}>
-                                    <span>{t.name}</span>
-                                    <span className="record">{t.wins}W-{t.losses}L</span>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {active.map(t => (
+                                <div key={t.id} className="bg-[#12121f] border border-[#2a2a4a] hover:border-[#00ff88] p-4 rounded-xl flex justify-between items-center transition-all group">
+                                    <span className="font-bold text-lg group-hover:text-[#00ff88] transition-colors">{t.name}</span>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-xs text-gray-500 font-mono">REC</span>
+                                        <span className="font-mono font-bold text-gray-300">{t.wins}W-{t.losses}L</span>
+                                    </div>
+                                    {t.buyBacks > 0 && <span className="absolute -top-2 -right-2 bg-[#ff00aa] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">×{t.buyBacks}</span>}
                                 </div>
                             ))}
                         </div>
                     </div>
-                )}
-            </div>
 
-            <div className="card">
-                <div className="card-header">
-                    <h3 className="card-title"><span className="icon">🏆</span>Leaderboard</h3>
+                    {/* Eliminated Teams */}
+                    {eliminated.length > 0 && (
+                        <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-6 opacity-70 hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-3 h-3 rounded-full bg-[#ff3366]"></div>
+                                <h3 className="text-xl font-bold uppercase tracking-widest text-gray-400">Eliminated ({eliminated.length})</h3>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {eliminated.map(t => (
+                                    <div key={t.id} className="bg-[#12121f] border border-[#2a2a4a] p-3 rounded-xl flex justify-between items-center grayscale hover:grayscale-0 transition-all">
+                                        <span className="font-medium text-gray-400">{t.name}</span>
+                                        <span className="text-xs font-mono text-gray-600">{t.wins}-{t.losses}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
-                {top.map((t, i) => (
-                    <div key={t.id} className="leaderboard-item">
-                        <span className="rank">#{i + 1}</span>
-                        <span className="name">{t.name}</span>
-                        <span className="wins">{t.wins} W</span>
+
+                {/* LEADERBOARD */}
+                <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-0 overflow-hidden h-fit">
+                    <div className="bg-[#12121f] p-5 border-b border-[#2a2a4a]">
+                        <h3 className="text-xl font-bold uppercase tracking-widest flex items-center gap-3">
+                            <span className="text-2xl">🏆</span> Leaderboard
+                        </h3>
                     </div>
-                ))}
+                    <div className="divide-y divide-[#2a2a4a]">
+                        {top.map((t, i) => (
+                            <div key={t.id} className="p-4 flex items-center gap-4 hover:bg-white/5 transition-colors">
+                                <div className={`font-mono font-bold text-xl w-8 h-8 flex items-center justify-center rounded ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' :
+                                        i === 1 ? 'bg-gray-400/20 text-gray-400' :
+                                            i === 2 ? 'bg-orange-700/20 text-orange-600' : 'text-gray-600'
+                                    }`}>
+                                    #{i + 1}
+                                </div>
+                                <div className="flex-1 font-bold text-lg">{t.name}</div>
+                                <div className="font-mono font-bold text-[#00ff88]">{t.wins} <span className="text-xs text-gray-500">WINS</span></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

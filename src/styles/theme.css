@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Pong Royale Theme */
 :root {
     --primary: #00ff88;
