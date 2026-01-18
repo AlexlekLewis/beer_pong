@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern Esport Palette (Riot/Valorant inspired) */
+:root {
+    --bg-dark: #0f171e;
+    /* Deepest background */
+    --bg-card: rgba(30, 41, 59, 0.7);
+    /* Glassy panel (Slate-800) */
+    --bg-elevated: #1e293b;
+    /* Solid panel */
+
+    --primary: #6366f1;
+    /* Indigo/Purple Accent (Like the Create button) */
+    --primary-glow: rgba(99, 102, 241, 0.5);
+
+    --secondary: #334155;
+    /* Slate-700 */
+    --accent: #ff4655;
+    /* Valorant Red for highlights */
+    --accent-glow: rgba(255, 70, 85, 0.5);
+
+    --text: #f8fafc;
+    /* Slate-50 */
+    --text-muted: #94a3b8;
+    /* Slate-400 */
+    --text-dim: #64748b;
+    /* Slate-500 */
+
+    --border: rgba(148, 163, 184, 0.1);
+
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    /* Subtle tech grid background */
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.1em;
+}
+
+/* Background Effects */
+.bg-grid-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: -1;
+}
+
+
+
+.bg-nebula {
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200vw;
+    height: 200vh;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(10, 10, 18, 0.2) 0%, rgba(10, 10, 18, 1) 100%),
+        radial-gradient(circle at 80% 20%, rgba(255, 0, 170, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: -2;
+    animation: ken-burns 30s ease-in-out infinite alternate;
+}
+
+/* Animations */
+@keyframes text-glow {
+
+    0%,
+    100% {
+        text-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    50% {
+        text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow);
+    }
+}
+
+@keyframes box-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px var(--primary-glow);
+        border-color: var(--primary);
+    }
+
+    50% {
+        box-shadow: 0 0 20px var(--accent-glow);
+        border-color: var(--accent);
+    }
+}
+
+@keyframes scanline {
+    0% {
+        transform: translateY(-100%);
+    }
+
+    100% {
+        transform: translateY(100vh);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Utilities */
+.animate-text-glow {
+    animation: text-glow 3s ease-in-out infinite;
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* --- ARCADE NIGHT ADDITIONS --- */
+
+@keyframes pulse-fast {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px) rotate(-1deg);
+    }
+
+    75% {
+        transform: translateX(5px) rotate(1deg);
+    }
+}
+
+@keyframes chromatic {
+    0% {
+        text-shadow: 2px 0 var(--secondary), -2px 0 var(--accent);
+    }
+
+    25% {
+        text-shadow: -2px 0 var(--secondary), 2px 0 var(--accent);
+    }
+
+    50% {
+        text-shadow: 2px 0 var(--secondary), -2px 0 var(--accent);
+    }
+
+    75% {
+        text-shadow: -2px 0 var(--secondary), 2px 0 var(--accent);
+    }
+
+    100% {
+        text-shadow: 2px 0 var(--secondary), -2px 0 var(--accent);
+    }
+}
+
+@keyframes ken-burns {
+    0% {
+        transform: scale(1) translate(0, 0);
+    }
+
+    50% {
+        transform: scale(1.1) translate(-1%, -1%);
+    }
+
+    100% {
+        transform: scale(1) translate(0, 0);
+    }
+}
+
+.animate-pulse-fast {
+    animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shake {
+    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+.animate-chromatic {
+    animation: chromatic 4s infinite linear;
+}
+
+.animate-ken-burns {
+    animation: ken-burns 20s ease-in-out infinite alternate;
+}
+
+.glass-panel-strong {
+    background: rgba(10, 10, 18, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.neon-border {
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.neon-border:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.glass-panel {
+    background: rgba(18, 18, 31, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 4px;
+}
+
+.clip-path-chamfer {
+    clip-path: polygon(8px 0,
+            100% 0,
+            100% calc(100% - 8px),
+            calc(100% - 8px) 100%,
+            0 100%,
+            0 8px);
+}
+
+.clip-path-button {
+    clip-path: polygon(10px 0,
+            100% 0,
+            100% calc(100% - 10px),
+            calc(100% - 10px) 100%,
+            0 100%,
+            0 10px);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}

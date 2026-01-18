@@ -1,61 +1,47 @@
-import React, { useState } from 'react';
-import { useTournament, TournamentProvider } from './context/TournamentContext';
-import SetupView from './views/SetupView';
-import AdminView from './views/AdminView';
-import DashboardView from './views/DashboardView';
-import BracketView from './views/BracketView';
-import SpectatorView from './views/SpectatorView';
-import WinnerScreen from './components/WinnerScreen';
-import Layout from './components/Layout';
+import React, { useState, useEffect } from 'react';
+import { TournamentProvider, useTournament } from './context/TournamentContext';
+import { SetupView } from './views/SetupView';
+import { DashboardView } from './views/DashboardView';
+import { SpectatorView } from './views/SpectatorView';
+import { MainLayout } from './components/MainLayout';
 
-// Inner component to use the context
 const AppContent: React.FC = () => {
-  const { teams, status, resetTournament } = useTournament();
-  const [view, setView] = useState<'setup' | 'admin' | 'dashboard' | 'bracket'>('dashboard');
+    const { status, resetTournament } = useTournament();
+    const [isSpectator, setIsSpectator] = useState(false);
 
-  const activeTeams = teams.filter(t => t.status === 'active');
-  const handleNav = (v: 'setup' | 'admin' | 'dashboard' | 'bracket') => setView(v);
+    useEffect(() => {
+        if (window.location.search.includes('spectator')) {
+            setIsSpectator(true);
+        }
+    }, []);
 
-  // Determine Champion if completed
-  const champion = status === 'completed' && activeTeams.length === 1 ? activeTeams[0] : null;
+    if (isSpectator) {
+        return <SpectatorView />;
+    }
 
-  // Spectator Route Check
-  if (window.location.pathname === '/spectator') {
-    return <SpectatorView />;
-  }
-
-  return (
-    <Layout
-      currentView={view}
-      onChangeView={handleNav}
-    >
-      {/* Factory Reset Hack Button (Top Right) - Optional, maybe remove for clean UI or keep hidden */}
-      {/* Leaving it out for now to ensure strict type compliance with Layout's children constraint */}
-
-      {/* Winner Overlay */}
-      {status === 'completed' && champion && (
-        <WinnerScreen
-          champion={champion}
-          onClose={resetTournament}
-        />
-      )}
-
-      {/* Main Views */}
-      {view === 'setup' && <SetupView />}
-      {view === 'admin' && <AdminView />}
-      {view === 'dashboard' && <DashboardView onNavigate={(target) => handleNav(target)} />}
-      {view === 'bracket' && <BracketView />}
-    </Layout>
-  );
+    return (
+        <MainLayout>
+            {status === 'setup' ? (
+                <SetupView />
+            ) : (
+                <DashboardView />
+            )}
+        </MainLayout>
+    );
 };
 
-// Main App Component wrapping with Provider
-const App: React.FC = () => {
-  return (
-    <TournamentProvider>
-      <AppContent />
-    </TournamentProvider>
-  );
-};
+import { ViewProvider } from './context/ViewContext';
+
+// ...
+
+function App() {
+    return (
+        <TournamentProvider>
+            <ViewProvider>
+                <AppContent />
+            </ViewProvider>
+        </TournamentProvider>
+    );
+}
 
 export default App;

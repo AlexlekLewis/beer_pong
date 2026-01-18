@@ -1,367 +1,198 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Team, Match, TournamentState, TournamentStatus } from '../types';
-import { supabase } from '../lib/supabase';
-
-interface TournamentContextType extends TournamentState {
-    addTeam: (name: string) => void;
-    removeTeam: (id: string) => void;
-    buyBackTeam: (id: string) => void;
-    startTournament: () => void;
-    recordMatchResult: (matchId: string, winnerId: string) => void;
-    nextRound: () => void;
-    resolveLottery: (winnerId: string) => void;
-    isLotteryRequired: boolean;
-    lotteryCandidates: Team[];
-    resetTournament: () => void;
-    getBuyBackCost: (round: number) => number;
-    forceUpdateTeam: (id: string, updates: Partial<Team>) => void;
-    resetMatch: (matchId: string) => void;
-    loading: boolean;
-}
+import type { Team, Match, TournamentState, TournamentContextType } from '../types';
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
 
-export const useTournament = () => {
-    const context = useContext(TournamentContext);
-    if (!context) {
-        throw new Error('useTournament must be used within a TournamentProvider');
-    }
-    return context;
-};
+const STORAGE_KEY = 'pong_royale_v2_data';
 
-export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    // Load initial state from localStorage
-    const [teams, setTeams] = useState<Team[]>(() => {
-        const saved = localStorage.getItem('pong_teams');
-        return saved ? JSON.parse(saved) : [];
-    });
-    const [matches, setMatches] = useState<Match[]>(() => {
-        const saved = localStorage.getItem('pong_matches');
-        return saved ? JSON.parse(saved) : [];
-    });
-    const [currentRound, setCurrentRound] = useState(() => {
-        const saved = localStorage.getItem('pong_round');
-        return saved ? parseInt(saved) : 1;
-    });
-    const [status, setStatus] = useState<TournamentStatus>(() => {
-        const saved = localStorage.getItem('pong_status');
-        return saved ? (saved as TournamentStatus) : 'setup';
-    });
-
-    // Additional state (no need to complicate persistence for transient UI states, but lottery candidates matter)
-    const [lotteryCandidates, setLotteryCandidates] = useState<Team[]>(() => {
-        const saved = localStorage.getItem('pong_lottery');
-        return saved ? JSON.parse(saved) : [];
-    });
-
+export const TournamentProvider = ({ children }: { children: ReactNode }) => {
+    // --- State ---
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [matches, setMatches] = useState<Match[]>([]);
+    const [currentRound, setCurrentRound] = useState(1);
+    const [status, setStatus] = useState<TournamentState['status']>('setup');
+    const [winnerId, setWinnerId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Supabase Integration
-    const TOURNAMENT_ID = 'default-event'; // Single event mode for now
-
-    // 1. Initial Load & Subscription
+    // --- Persistence ---
     useEffect(() => {
-        let subscription: any;
-
-        const initSupabase = async () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
             try {
-                // Fetch initial state
-                const { data } = await supabase
-                    .from('tournament_state')
-                    .select('data')
-                    .eq('id', TOURNAMENT_ID)
-                    .single();
-
-                if (data?.data) {
-                    console.log("Loaded from Cloud:", data.data);
-                    const cloudState = data.data;
-                    setTeams(cloudState.teams || []);
-                    setMatches(cloudState.matches || []);
-                    setCurrentRound(cloudState.currentRound || 1);
-                    setStatus(cloudState.status || 'setup');
-                    setLotteryCandidates(cloudState.lotteryCandidates || []);
-                }
-            } catch (err) {
-                console.error("Failed to load tournament data", err);
-            } finally {
-                setLoading(false);
+                const data = JSON.parse(saved);
+                setTeams(data.teams || []);
+                setMatches(data.matches || []);
+                setCurrentRound(data.currentRound || 1);
+                setStatus(data.status || 'setup');
+                setWinnerId(data.winnerId || null);
+            } catch (e) {
+                console.error("Failed to load tournament data", e);
             }
-
-            // Subscribe to changes
-            subscription = supabase
-                .channel('public:tournament_state')
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'tournament_state',
-                    filter: `id = eq.${TOURNAMENT_ID} `
-                }, (payload) => {
-                    console.log("Real-time Update:", payload);
-                    const newData = payload.new.data;
-                    if (newData) {
-                        setTeams(newData.teams || []);
-                        setMatches(newData.matches || []);
-                        setCurrentRound(newData.currentRound || 1);
-                        setStatus(newData.status || 'setup');
-                        setLotteryCandidates(newData.lotteryCandidates || []);
-                    }
-                })
-                .subscribe();
-        };
-
-        // Initialize immediately
-        initSupabase();
-
-        return () => {
-            if (subscription) supabase.removeChannel(subscription);
-        };
+        }
+        setLoading(false);
     }, []);
 
-    // 2. Sync to Cloud on Change
     useEffect(() => {
-        if (loading) return; // Don't sync back empty state during load logic if any
-
-        const payload = { teams, matches, currentRound, status, lotteryCandidates };
-
-        const saveData = async () => {
-            // Save to LocalStorage as backup
-            localStorage.setItem('pong_tournament_data', JSON.stringify(payload));
-            // ... (keep legacy redundant keys if needed, skipping for brevity in this replace)
-
-            // Save to Supabase
-            const { error } = await supabase
-                .from('tournament_state')
-                .upsert({ id: TOURNAMENT_ID, data: payload });
-
-            if (error) console.error("Cloud Sync Error:", error);
-        };
-
-        const timer = setTimeout(saveData, 1000); // 1s debounce
-        return () => clearTimeout(timer);
-    }, [teams, matches, currentRound, status, lotteryCandidates, loading]);
-
-
-    // Removed the old localStorage persistence effect and multi-tab sync effect as Supabase handles this.
-
-    // Safe ID generator (fallback for environments where crypto.randomUUID is flaky)
-    const generateId = () => {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            return crypto.randomUUID();
+        if (!loading) {
+            const data = { teams, matches, currentRound, status, winnerId };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    };
+    }, [teams, matches, currentRound, status, winnerId, loading]);
+
+    // --- Actions ---
 
     const addTeam = (name: string) => {
-        if (teams.some(t => t.name.toLowerCase() === name.toLowerCase())) return;
         const newTeam: Team = {
-            id: generateId(),
+            id: crypto.randomUUID(),
             name,
+            status: 'active',
             wins: 0,
             losses: 0,
             buyBacks: 0,
-            status: 'active',
-            eliminatedRound: null
+            seed: teams.length + 1
         };
-        setTeams([...teams, newTeam]);
+        setTeams(prev => [...prev, newTeam]);
     };
 
     const removeTeam = (id: string) => {
-        setTeams(teams.filter(t => t.id !== id));
-    };
-
-    const buyBackTeam = (id: string) => {
-        setTeams(teams.map(t =>
-            t.id === id ? { ...t, status: 'buyback-pending', buyBacks: t.buyBacks + 1 } : t
-        ));
-    };
-
-    const generateMatches = (activeTeams: Team[]) => {
-        // Shuffle
-        const shuffled = [...activeTeams].sort(() => Math.random() - 0.5);
-        const newMatches: Match[] = [];
-        let byeTeam: Team | null = null;
-        let pairingPool = [...shuffled];
-
-        // Odd logic
-        if (pairingPool.length % 2 !== 0) {
-            const maxWins = Math.max(...pairingPool.map(t => t.wins));
-            const candidates = pairingPool.filter(t => t.wins === maxWins);
-            const selectedBye = candidates[Math.floor(Math.random() * candidates.length)];
-
-            byeTeam = selectedBye;
-            pairingPool = pairingPool.filter(t => t.id !== selectedBye.id); // Remove
-
-            // Add Bye Match
-            newMatches.push({
-                id: generateId(),
-                round: currentRound,
-                team1: byeTeam,
-                team2: null,
-                winner: byeTeam, // Auto win
-                loser: null,
-                completed: true,
-                isBye: true
-            });
-        }
-
-        // Shuffle rest
-        pairingPool.sort(() => Math.random() - 0.5);
-
-        while (pairingPool.length >= 2) {
-            const t1 = pairingPool.pop()!;
-            const t2 = pairingPool.pop()!;
-            newMatches.push({
-                id: generateId(),
-                round: currentRound,
-                team1: t1,
-                team2: t2,
-                winner: null,
-                loser: null,
-                completed: false,
-                isBye: false
-            });
-        }
-
-        setMatches(prev => [...prev, ...newMatches]);
-
-        // Process Bye auto-win in state
-        if (byeTeam) {
-            setTeams(prev => prev.map(t =>
-                t.id === byeTeam!.id ? { ...t, wins: t.wins + 1 } : t
-            ));
-        }
+        setTeams(prev => prev.filter(t => t.id !== id));
     };
 
     const startTournament = () => {
         if (teams.length < 2) return;
         setStatus('active');
         setCurrentRound(1);
-        generateMatches(teams); // All active initially
+        generateRoundMatches(1, teams);
     };
 
-    const recordMatchResult = (matchId: string, winnerId: string) => {
-        const matchRaw = matches.find(m => m.id === matchId);
-        if (!matchRaw) return;
+    const generateRoundMatches = (round: number, pool: Team[]) => {
+        // Simple distinct pairing for now.
+        // Shuffle pool?
+        const shuffled = [...pool].sort(() => Math.random() - 0.5);
+        const newMatches: Match[] = [];
 
-        // If match was already completed, we need to REVERSE the stats for the previous winner/loser first
-        let teamsCopy = [...teams];
-        if (matchRaw.completed && matchRaw.winner && matchRaw.loser) {
-            teamsCopy = teamsCopy.map(t => {
-                if (t.id === matchRaw.winner!.id) return { ...t, wins: t.wins - 1 };
-                // If they were eliminated by this match, restore them?
-                // Logic: check if they are currently eliminated AND this was the match that eliminated them?
-                // Easier: just decrement losses. Status restoration is tricky if they bought back, but for simple 'undo' in same round:
-                if (t.id === matchRaw.loser!.id) {
-                    const newLosses = t.losses - 1;
-                    // If they were eliminated, reactivate them safely
-                    return { ...t, losses: newLosses, status: t.status === 'eliminated' ? 'active' : t.status };
-                }
-                return t;
-            });
+        for (let i = 0; i < shuffled.length; i += 2) {
+            const t1 = shuffled[i];
+            const t2 = shuffled[i + 1];
+
+            if (t2) {
+                // Pair
+                newMatches.push({
+                    id: crypto.randomUUID(),
+                    round,
+                    matchNumber: (newMatches.length + 1),
+                    team1Id: t1.id,
+                    team2Id: t2.id,
+                    score1: 0,
+                    score2: 0,
+                    winnerId: null,
+                    completed: false,
+                    isBye: false,
+                    nextMatchId: null
+                });
+            } else {
+                // Bye
+                newMatches.push({
+                    id: crypto.randomUUID(),
+                    round,
+                    matchNumber: (newMatches.length + 1),
+                    team1Id: t1.id,
+                    team2Id: null,
+                    score1: 0,
+                    score2: 0,
+                    winnerId: t1.id, // Auto win
+                    completed: true,
+                    isBye: true,
+                    nextMatchId: null
+                });
+                // Auto-update team stats for bye? Maybe not wins/losses, just advance.
+            }
         }
 
-        const winner = teamsCopy.find(t => t.id === winnerId)!;
-        // Determine loser based on the fresh copy
-        const loserId = matchRaw.team1.id === winnerId ? matchRaw.team2!.id : matchRaw.team1.id;
-        const loser = teamsCopy.find(t => t.id === loserId)!;
+        setMatches(prev => [...prev, ...newMatches]);
+    };
 
-        // Apply NEW stats
-        teamsCopy = teamsCopy.map(t => {
-            if (t.id === winner.id) return { ...t, wins: t.wins + 1 };
-            if (t.id === loser.id) return { ...t, losses: t.losses + 1, status: 'eliminated', eliminatedRound: currentRound };
-            return t;
-        });
+    const recordMatchResult = (matchId: string, score1: number, score2: number, winnerId: string) => {
+        setMatches(prev => prev.map(m => {
+            if (m.id === matchId) {
+                return { ...m, score1, score2, winnerId, completed: true, completedAt: Date.now() };
+            }
+            return m;
+        }));
 
-        setTeams(teamsCopy);
+        // Update Team Stats
+        const match = matches.find(m => m.id === matchId);
+        if (match) {
+            const loserId = match.team1Id === winnerId ? match.team2Id : match.team1Id;
 
-        setMatches(prev => prev.map(m =>
-            m.id === matchId
-                ? {
-                    ...m,
-                    completed: true,
-                    winner: teamsCopy.find(t => t.id === winner.id) || null,
-                    loser: teamsCopy.find(t => t.id === loserId) || null
-                }
-                : m
-        ));
+            setTeams(prev => prev.map(t => {
+                if (t.id === winnerId) return { ...t, wins: t.wins + 1 };
+                if (t.id === loserId) return { ...t, losses: t.losses + 1, status: 'eliminated', eliminatedInRound: currentRound };
+                return t;
+            }));
+        }
     };
 
     const resetMatch = (matchId: string) => {
         const match = matches.find(m => m.id === matchId);
-        if (!match || !match.completed || !match.winner || !match.loser) return;
+        if (!match || !match.completed) return;
 
         // Revert stats
+        const winnerId = match.winnerId;
+        const loserId = match.team1Id === winnerId ? match.team2Id : match.team1Id;
+
         setTeams(prev => prev.map(t => {
-            if (t.id === match.winner!.id) return { ...t, wins: t.wins - 1 };
-            if (t.id === match.loser!.id) {
-                const newLosses = t.losses - 1;
-                // If they were eliminated by this match (and not previously?), we should restore them.
-                // Simplified: If they are eliminated, make them active (unless they were eliminated by an earlier match? simpler to just reactivate)
-                return { ...t, losses: newLosses, status: t.status === 'eliminated' ? 'active' : t.status };
-            }
+            if (t.id === winnerId) return { ...t, wins: t.wins - 1 };
+            if (t.id === loserId) return { ...t, losses: t.losses - 1, status: 'active', eliminatedInRound: undefined }; // Revert elimination
             return t;
         }));
 
-        // Reset match
-        setMatches(prev => prev.map(m =>
-            m.id === matchId ? { ...m, completed: false, winner: null, loser: null } : m
-        ));
+        setMatches(prev => prev.map(m => {
+            if (m.id === matchId) {
+                return { ...m, score1: 0, score2: 0, winnerId: null, completed: false, completedAt: undefined };
+            }
+            return m;
+        }));
     };
 
     const nextRound = () => {
-        const active = teams.filter(t => t.status === 'active');
-        const pending = teams.filter(t => t.status === 'buyback-pending');
+        // Collect all 'active' teams (winners + buybacks)
+        const activeTeams = teams.filter(t => t.status === 'active');
 
-        // Check Champion
-        if (active.length === 1 && pending.length === 0) {
+        if (activeTeams.length <= 1) {
             setStatus('completed');
+            setWinnerId(activeTeams[0]?.id || null);
             return;
         }
 
-        const totalCount = active.length + pending.length;
-
-        if (totalCount % 2 === 0) {
-            // Even: Promote all pending -> active
-            const newTeams = teams.map(t =>
-                t.status === 'buyback-pending' ? { ...t, status: 'active' as const } : t
-            );
-            setTeams(newTeams);
-            // We need to pass the updated list to generateMatches
-            const newActive = newTeams.filter(t => t.status === 'active');
-            setCurrentRound(r => r + 1);
-            generateMatches(newActive);
-        } else {
-            // Odd
-            if (pending.length > 0) {
-                // Lottery
-                setLotteryCandidates(pending);
-            } else {
-                // No buybacks, just odd active number
-                setCurrentRound(r => r + 1);
-                generateMatches(active);
-            }
-        }
+        const nextRoundNum = currentRound + 1;
+        setCurrentRound(nextRoundNum);
+        generateRoundMatches(nextRoundNum, activeTeams);
     };
 
-    const resolveLottery = (winnerId: string) => {
-        // Winner gets active, others get eliminated AND buyback decrement
-        const newTeams = teams.map(t => {
-            if (t.status !== 'buyback-pending') return t;
-            if (t.id === winnerId) {
-                return { ...t, status: 'active' as const };
-            } else {
-                // Refund/Decrement buyback
-                return { ...t, status: 'eliminated' as const, buyBacks: Math.max(0, t.buyBacks - 1) };
+    const buyBackTeam = (teamId: string) => {
+        // Strict Window Check
+        const team = teams.find(t => t.id === teamId);
+        if (!team || team.eliminatedInRound !== currentRound) {
+            console.warn("Buyback invalid: Team eliminated in different round or not found.");
+            return;
+        }
+
+        setTeams(prev => prev.map(t => {
+            if (t.id === teamId) {
+                return {
+                    ...t,
+                    status: 'active',
+                    buyBacks: t.buyBacks + 1,
+                    eliminatedInRound: undefined // Clear elimination record
+                };
             }
-        });
+            return t;
+        }));
+    };
 
-        setTeams(newTeams);
-        setLotteryCandidates([]); // Clear lottery
-
-        // Now start round
-        const active = newTeams.filter(t => t.status === 'active');
-        setCurrentRound(r => r + 1);
-        generateMatches(active);
+    const getBuyBackCost = (round: number) => {
+        return round * 10; // $10 per round
     };
 
     const resetTournament = () => {
@@ -369,40 +200,12 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         setMatches([]);
         setCurrentRound(1);
         setStatus('setup');
-        setLotteryCandidates([]);
-        localStorage.removeItem('pong_teams');
-        localStorage.removeItem('pong_matches');
-        localStorage.removeItem('pong_round');
-        localStorage.removeItem('pong_status');
-        localStorage.removeItem('pong_lottery');
-    };
-
-    const getBuyBackCost = (round: number): number => {
-        // "10, 20, 40, 50, 60, 70, 80, and 100 dollars"
-        // Note: The jump from 20 to 40 seems to skip 30?
-        // Round 1: 10
-        // Round 2: 20
-        // Round 3: 40
-        // Round 4: 50
-        // Round 5: 60
-        // Round 6: 70
-        // Round 7: 80
-        // Round 8+: 100
-
-        if (round === 1) return 10;
-        if (round === 2) return 20;
-        if (round === 3) return 40;
-        if (round === 4) return 50;
-        if (round === 5) return 60;
-        if (round === 6) return 70;
-        if (round === 7) return 80;
-        return 100;
+        setWinnerId(null);
+        localStorage.removeItem(STORAGE_KEY);
     };
 
     const forceUpdateTeam = (id: string, updates: Partial<Team>) => {
-        setTeams(prev => prev.map(t =>
-            t.id === id ? { ...t, ...updates } : t
-        ));
+        setTeams(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     };
 
     return (
@@ -411,22 +214,27 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
             matches,
             currentRound,
             status,
+            winnerId,
             addTeam,
             removeTeam,
-            buyBackTeam,
             startTournament,
             recordMatchResult,
-            nextRound,
-            resolveLottery,
-            isLotteryRequired: lotteryCandidates.length > 0,
-            lotteryCandidates,
-            resetTournament,
-            getBuyBackCost,
-            forceUpdateTeam,
             resetMatch,
-            loading
+            nextRound,
+            buyBackTeam,
+            getBuyBackCost,
+            resetTournament,
+            forceUpdateTeam
         }}>
             {children}
         </TournamentContext.Provider>
     );
+};
+
+export const useTournament = () => {
+    const context = useContext(TournamentContext);
+    if (context === undefined) {
+        throw new Error('useTournament must be used within a TournamentProvider');
+    }
+    return context;
 };

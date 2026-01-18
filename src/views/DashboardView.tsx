@@ -1,161 +1,225 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTournament } from '../context/TournamentContext';
+import { MatchDirectorCard } from '../components/MatchDirectorCard';
+import { TeamCard } from '../components/TeamCard';
+import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { BracketView } from './BracketView';
 
-interface DashboardViewProps {
-    onNavigate: (view: 'setup' | 'admin') => void;
-}
+import { useView } from '../context/ViewContext';
 
-const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-    const { teams, matches, currentRound, loading } = useTournament();
+export const DashboardView: React.FC = () => {
+    const {
+        matches,
+        teams,
+        currentRound,
+        status,
+        recordMatchResult,
+        resetMatch,
+        startTournament,
+        nextRound,
+        resetTournament,
+        buyBackTeam,
+        getBuyBackCost
+    } = useTournament();
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <h2 className="text-3xl font-bold text-gray-500 animate-pulse">Loading...</h2>
-            </div>
-        );
-    }
+    const { currentView } = useView();
 
-    const active = teams.filter(t => t.status === 'active');
-    const eliminated = teams.filter(t => t.status === 'eliminated' || t.status === 'buyback-pending');
-    const buyBacks = teams.reduce((s, t) => s + (t.buyBacks || 0), 0);
-    const games = matches.filter(m => m.completed && !m.isBye).length;
-    const top = [...teams].sort((a, b) => b.wins - a.wins).slice(0, 5);
+    const roundMatches = matches.filter(m => m.round === currentRound);
+    const pendingMatches = roundMatches.filter(m => !m.completed);
+    const completedMatches = roundMatches.filter(m => m.completed).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    const isRoundComplete = roundMatches.length > 0 && pendingMatches.length === 0;
+
+    const activeTeams = teams.filter(t => t.status === 'active');
+    const eliminatedTeams = teams.filter(t => t.status === 'eliminated');
 
     return (
-        <div className="max-w-6xl mx-auto px-4 pb-12">
+        <div className="space-y-8">
+            {/* Status Bar removed as it is now in Sidebar/Header */}
 
-            {/* NO TOURNAMENT STATE */}
-            {teams.length < 2 && (
-                <div className="text-center py-20 px-6 border-2 border-dashed border-gray-700 rounded-2xl bg-gray-900/50">
-                    <h2 className="text-3xl font-bold mb-6 text-gray-300">No Tournament Active</h2>
-                    <button
-                        className="bg-green-500 hover:bg-green-400 text-black font-bold text-xl py-4 px-10 rounded-xl shadow-lg shadow-green-900/40 transform hover:scale-105 transition-all"
-                        onClick={() => onNavigate('setup')}
-                    >
-                        Get Started in Registration 📝
-                    </button>
-                    <p className="mt-4 text-gray-500">Go to the <b>Registration</b> tab to add teams.</p>
+            {/* BRACKETS */}
+            {currentView === 'bracket' && (
+                <div className="animate-slide-up">
+                    <Card title="Tournament Bracket">
+                        <BracketView />
+                    </Card>
                 </div>
             )}
 
-            {/* ACTION BANNER */}
-            {currentRound > 0 && matches.some(m => !m.completed) && (
-                <div onClick={() => onNavigate('admin')} className="mb-8 bg-gradient-to-r from-green-900/40 to-blue-900/40 border-l-4 border-green-500 rounded-r-xl p-8 cursor-pointer hover:bg-white/5 transition-all group relative overflow-hidden">
-                    <div className="absolute inset-0 bg-green-500/5 group-hover:bg-green-500/10 transition-colors"></div>
-                    <div className="relative flex justify-between items-center">
-                        <div>
-                            <h3 className="text-2xl font-bold text-green-400 mb-2 flex items-center gap-3">
-                                <span className="animate-pulse">●</span> Action Required
+            {/* LIVE MATCHES (Overview) */}
+            {currentView === 'overview' && (
+                <div className="space-y-8 animate-slide-up">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-2xl font-bold text-white font-rajdhani">
+                            LIVE FEED <span className="animate-pulse text-accent">●</span>
+                        </h2>
+                        {isRoundComplete && status === 'active' && (
+                            <Button variant="success" onClick={nextRound} className="animate-pulse">
+                                INITIALIZE ROUND {currentRound + 1} &rarr;
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                        {pendingMatches.map(match => (
+                            <MatchDirectorCard
+                                key={match.id}
+                                match={match}
+                                teams={teams}
+                                onRecordResult={recordMatchResult}
+                                onReset={resetMatch}
+                            />
+                        ))}
+                    </div>
+
+                    {pendingMatches.length === 0 && (
+                        <div className="text-center py-12 border border-dashed border-white/10 rounded text-text-muted">
+                            ALL MATCHES IN SEQUENCE COMPLETED
+                        </div>
+                    )}
+
+                    {completedMatches.length > 0 && (
+                        <div className="mt-12">
+                            <h3 className="text-xl font-bold text-text-muted mb-6 uppercase tracking-widest">
+                                Completed Log
                             </h3>
-                            <p className="text-gray-300 text-lg">Matches are waiting! Go to the <b>Control Panel</b> to manage the round.</p>
-                        </div>
-                        <button className="bg-green-500 text-black font-bold py-3 px-8 rounded-lg shadow-lg group-hover:scale-105 transition-transform">
-                            Open Control Panel →
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* HIGH VISIBILITY STATS GRID */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
-                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden group hover:border-[#00d4ff] transition-colors">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#00d4ff]"></div>
-                    <div className="text-6xl font-extrabold text-[#00d4ff] mb-2 drop-shadow-[0_0_15px_rgba(0,212,255,0.4)]">{currentRound}</div>
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Round</div>
-                </div>
-
-                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-white transition-colors">
-                    <div className="text-6xl font-extrabold text-white mb-2">{active.length}</div>
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Remaining</div>
-                </div>
-
-                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-[#ff3366] transition-colors">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#ff3366]"></div>
-                    <div className="text-6xl font-extrabold text-[#ff3366] mb-2 drop-shadow-[0_0_15px_rgba(255,51,102,0.4)]">{eliminated.length}</div>
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Eliminated</div>
-                </div>
-
-                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-[#ff00aa] transition-colors">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#ff00aa]"></div>
-                    <div className="text-6xl font-extrabold text-[#ff00aa] mb-2 drop-shadow-[0_0_15px_rgba(255,0,170,0.4)]">{buyBacks}</div>
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Buy-Backs</div>
-                </div>
-
-                <div className="bg-[#12121f] border border-[#2a2a4a] p-6 rounded-2xl text-center relative overflow-hidden hover:border-[#ffaa00] transition-colors">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#ffaa00]"></div>
-                    <div className="text-6xl font-extrabold text-[#ffaa00] mb-2 drop-shadow-[0_0_15px_rgba(255,170,0,0.4)]">{games}</div>
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Games</div>
-                </div>
-            </div>
-
-            <div className="grid lg:grid-cols-3 gap-8">
-                {/* STATUS BOARD */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Active Teams */}
-                    <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-6">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-3 h-3 rounded-full bg-[#00ff88] shadow-[0_0_10px_#00ff88] animate-pulse"></div>
-                            <h3 className="text-xl font-bold uppercase tracking-widest">Still In Competition ({active.length})</h3>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {active.map(t => (
-                                <div key={t.id} className="bg-[#12121f] border border-[#2a2a4a] hover:border-[#00ff88] p-4 rounded-xl flex justify-between items-center transition-all group">
-                                    <span className="font-bold text-lg group-hover:text-[#00ff88] transition-colors">{t.name}</span>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-xs text-gray-500 font-mono">REC</span>
-                                        <span className="font-mono font-bold text-gray-300">{t.wins}W-{t.losses}L</span>
-                                    </div>
-                                    {t.buyBacks > 0 && <span className="absolute -top-2 -right-2 bg-[#ff00aa] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">×{t.buyBacks}</span>}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Eliminated Teams */}
-                    {eliminated.length > 0 && (
-                        <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-6 opacity-70 hover:opacity-100 transition-opacity">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-3 h-3 rounded-full bg-[#ff3366]"></div>
-                                <h3 className="text-xl font-bold uppercase tracking-widest text-gray-400">Eliminated ({eliminated.length})</h3>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {eliminated.map(t => (
-                                    <div key={t.id} className="bg-[#12121f] border border-[#2a2a4a] p-3 rounded-xl flex justify-between items-center grayscale hover:grayscale-0 transition-all">
-                                        <span className="font-medium text-gray-400">{t.name}</span>
-                                        <span className="text-xs font-mono text-gray-600">{t.wins}-{t.losses}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-80">
+                                {completedMatches.map(match => (
+                                    <div key={match.id} className="relative group">
+                                        {match.completedAt && (
+                                            <div className="absolute -top-3 left-4 bg-bg-dark border border-white/10 px-2 py-1 text-[10px] uppercase tracking-widest text-text-dim rounded shadow z-10">
+                                                {new Date(match.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        )}
+                                        <MatchDirectorCard
+                                            match={match}
+                                            teams={teams}
+                                            onRecordResult={recordMatchResult}
+                                            onReset={resetMatch}
+                                        />
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
                 </div>
+            )}
 
-                {/* LEADERBOARD */}
-                <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-0 overflow-hidden h-fit">
-                    <div className="bg-[#12121f] p-5 border-b border-[#2a2a4a]">
-                        <h3 className="text-xl font-bold uppercase tracking-widest flex items-center gap-3">
-                            <span className="text-2xl">🏆</span> Leaderboard
-                        </h3>
-                    </div>
-                    <div className="divide-y divide-[#2a2a4a]">
-                        {top.map((t, i) => (
-                            <div key={t.id} className="p-4 flex items-center gap-4 hover:bg-white/5 transition-colors">
-                                <div className={`font-mono font-bold text-xl w-8 h-8 flex items-center justify-center rounded ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                                        i === 1 ? 'bg-gray-400/20 text-gray-400' :
-                                            i === 2 ? 'bg-orange-700/20 text-orange-600' : 'text-gray-600'
-                                    }`}>
-                                    #{i + 1}
+            {/* STANDINGS (Teams) */}
+            {currentView === 'teams' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up">
+                    <Card title="Active Protocols">
+                        <div className="space-y-2">
+                            {activeTeams.map(t => (
+                                <TeamCard key={t.id} team={t} />
+                            ))}
+                        </div>
+                    </Card>
+
+                    <Card title="Restricted Access / Buyback">
+                        <div className="space-y-6">
+                            {eliminatedTeams.length === 0 && <div className="text-center text-text-dim">No Eliminated Teams</div>}
+
+                            {/* Eligible for Buyback */}
+                            <div>
+                                <h4 className="text-success text-sm uppercase font-bold tracking-widest mb-3 border-b border-white/10 pb-2">Buyback Window Open</h4>
+                                <div className="space-y-4">
+                                    {eliminatedTeams.filter(t => t.eliminatedInRound === currentRound).map(t => (
+                                        <div key={t.id} className="flex flex-col gap-2 p-4 border border-success/30 bg-success/5 rounded">
+                                            <TeamCard team={t} />
+                                            <Button
+                                                variant="success"
+                                                size="sm"
+                                                onClick={() => {
+                                                    if (confirm(`Buy back ${t.name} for $${getBuyBackCost(currentRound)}?`)) {
+                                                        buyBackTeam(t.id);
+                                                    }
+                                                }}
+                                                className="w-full font-bold"
+                                            >
+                                                BUY BACK (${getBuyBackCost(currentRound)})
+                                            </Button>
+                                            <div className="text-xs text-center text-success/70 uppercase tracking-wider">
+                                                Must buy back BEFORE Round {currentRound + 1}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {eliminatedTeams.filter(t => t.eliminatedInRound === currentRound).length === 0 && (
+                                        <div className="text-xs text-text-dim italic">No eligible teams for this round.</div>
+                                    )}
                                 </div>
-                                <div className="flex-1 font-bold text-lg">{t.name}</div>
-                                <div className="font-mono font-bold text-[#00ff88]">{t.wins} <span className="text-xs text-gray-500">WINS</span></div>
                             </div>
-                        ))}
-                    </div>
+
+                            {/* Permanently Eliminated */}
+                            <div>
+                                <h4 className="text-danger text-sm uppercase font-bold tracking-widest mb-3 border-b border-white/10 pb-2">Permanently Eliminated</h4>
+                                <div className="space-y-4">
+                                    {eliminatedTeams.filter(t => t.eliminatedInRound !== currentRound).map(t => (
+                                        <div key={t.id} className="flex flex-col gap-2 p-4 border border-white/5 rounded bg-bg-dark opacity-50 grayscale">
+                                            <TeamCard team={t} />
+                                            <div className="text-center text-xs text-danger font-bold uppercase tracking-widest">
+                                                ELIMINATED IN ROUND {t.eliminatedInRound || '?'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {eliminatedTeams.filter(t => t.eliminatedInRound !== currentRound).length === 0 && (
+                                        <div className="text-xs text-text-dim italic">No permanently eliminated teams yet.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
-            </div>
+            )}
+
+            {/* ADMIN (Settings) */}
+            {currentView === 'settings' && (
+                <div className="max-w-xl mx-auto animate-slide-up">
+                    <Card title="System Override">
+                        <div className="space-y-6">
+                            <div className="p-4 bg-danger/10 border border-danger/30 rounded text-center">
+                                <h4 className="text-danger font-bold text-lg mb-2">⚠ DANGER ZONE</h4>
+                                <p className="text-text-muted text-sm mb-4">
+                                    This action will <strong className="text-white">permanently delete</strong> all tournament data, including teams, matches, and history. This cannot be undone.
+                                </p>
+
+                                <div className="max-w-xs mx-auto">
+                                    <label className="block text-xs uppercase tracking-widest text-text-dim mb-2">
+                                        Type "RESET" to confirm
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Type 'reset'"
+                                        className="w-full bg-black/50 border border-white/10 rounded px-4 py-2 text-center font-mono text-white focus:border-danger focus:ring-1 focus:ring-danger outline-none transition-all uppercase"
+                                        onChange={(e) => {
+                                            const btn = document.getElementById('btn-factory-reset') as HTMLButtonElement;
+                                            if (btn) {
+                                                const val = e.target.value.toLowerCase();
+                                                btn.disabled = val !== 'reset';
+                                                btn.style.opacity = val === 'reset' ? '1' : '0.5';
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <Button
+                                id="btn-factory-reset"
+                                variant="danger"
+                                className="w-full opacity-50 relative overflow-hidden"
+                                disabled={true} // Start disabled
+                                onClick={() => {
+                                    // Double check just in case, though button state handles it
+                                    resetTournament();
+                                    // Clear the input manually or let React redraw (a real app might use controlled state here, but uncontrolled is fine for this simple gate)
+                                }}
+                            >
+                                <span className="relative z-10">FACTORY RESET SYSTEM</span>
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 };
-
-export default DashboardView;
