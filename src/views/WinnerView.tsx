@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useTournament } from '../context/TournamentContext';
 import confetti from 'canvas-confetti';
 

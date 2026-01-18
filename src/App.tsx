@@ -28,9 +28,6 @@ const AppContent: React.FC = () => {
     <Layout
       currentView={view}
       onChangeView={handleNav}
-      activeTeamCount={activeTeams.length} // Layout doesn't actually use this prop in the interface seen in Step 714, but we'll leave it or remove it if strictly typed. Step 714 LayoutProps: children, currentView, onChangeView. It DOES NOT have activeTeamCount.
-    // Wait, Step 714 Layout.tsx does NOT have activeTeamCount in LayoutProps.
-    // I should remove activeTeamCount to avoid error.
     >
       {/* Factory Reset Hack Button (Top Right) - Optional, maybe remove for clean UI or keep hidden */}
       {/* Leaving it out for now to ensure strict type compliance with Layout's children constraint */}

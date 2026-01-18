@@ -1,6 +1,6 @@
 import React from 'react';
 
-type ViewMode = 'admin' | 'dashboard' | 'bracket';
+type ViewMode = 'setup' | 'admin' | 'dashboard' | 'bracket';
 
 interface SidebarProps {
     currentView: ViewMode;

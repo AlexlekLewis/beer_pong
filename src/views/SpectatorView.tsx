@@ -17,7 +17,7 @@ const SpectatorView: React.FC = () => {
 
     const activeTeams = teams.filter(t => t.status === 'active');
     const eliminatedTeams = teams.filter(t => t.status === 'eliminated' || t.status === 'buyback-pending');
-    const totalBuyBacks = teams.reduce((s, t) => s + (t.buyBacks || 0), 0);
+
     const leaderboard = [...teams].sort((a, b) => b.wins - a.wins).slice(0, 6);
 
     const pendingMatches = matches.filter(m => !m.completed && m.round === currentRound);
