@@ -14,6 +14,8 @@ interface TournamentContextType extends TournamentState {
     lotteryCandidates: Team[];
     resetTournament: () => void;
     getBuyBackCost: (round: number) => number;
+    forceUpdateTeam: (id: string, updates: Partial<Team>) => void;
+    resetMatch: (matchId: string) => void;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -290,6 +292,28 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         ));
     };
 
+    const resetMatch = (matchId: string) => {
+        const match = matches.find(m => m.id === matchId);
+        if (!match || !match.completed || !match.winner || !match.loser) return;
+
+        // Revert stats
+        setTeams(prev => prev.map(t => {
+            if (t.id === match.winner!.id) return { ...t, wins: t.wins - 1 };
+            if (t.id === match.loser!.id) {
+                const newLosses = t.losses - 1;
+                // If they were eliminated by this match (and not previously?), we should restore them.
+                // Simplified: If they are eliminated, make them active (unless they were eliminated by an earlier match? simpler to just reactivate)
+                return { ...t, losses: newLosses, status: t.status === 'eliminated' ? 'active' : t.status };
+            }
+            return t;
+        }));
+
+        // Reset match
+        setMatches(prev => prev.map(m =>
+            m.id === matchId ? { ...m, completed: false, winner: null, loser: null } : m
+        ));
+    };
+
     const nextRound = () => {
         const active = teams.filter(t => t.status === 'active');
         const pending = teams.filter(t => t.status === 'buyback-pending');
@@ -381,6 +405,12 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         return 100;
     };
 
+    const forceUpdateTeam = (id: string, updates: Partial<Team>) => {
+        setTeams(prev => prev.map(t =>
+            t.id === id ? { ...t, ...updates } : t
+        ));
+    };
+
     return (
         <TournamentContext.Provider value={{
             teams,
@@ -397,7 +427,9 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
             isLotteryRequired: lotteryCandidates.length > 0,
             lotteryCandidates,
             resetTournament,
-            getBuyBackCost // Exported
+            getBuyBackCost,
+            forceUpdateTeam,
+            resetMatch
         }}>
             {children}
         </TournamentContext.Provider>
