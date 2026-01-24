@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { read, utils } from 'xlsx';
 import { useTournament } from '../context/TournamentContext';
 import { TeamCard } from '../components/TeamCard';
 import { Button } from '../components/Button';
@@ -14,6 +15,32 @@ export const SetupView: React.FC = () => {
         if (newTeamName.trim()) {
             addTeam(newTeamName.trim());
             setNewTeamName('');
+        }
+    };
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const data = await file.arrayBuffer();
+            const workbook = read(data);
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+            jsonData.forEach(row => {
+                if (row[0] && typeof row[0] === 'string' && row[0].trim()) {
+                    addTeam(row[0].trim());
+                }
+            });
+
+            // Clear input so same file can be selected again if needed
+            e.target.value = '';
+        } catch (error) {
+            console.error("Error reading file:", error);
+            alert("Error reading file. Please check the format.");
         }
     };
 
@@ -44,6 +71,23 @@ export const SetupView: React.FC = () => {
                             ADD
                         </Button>
                     </form>
+                </div>
+
+                <div className="mb-8 flex justify-end">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept=".xlsx, .xls, .csv"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                    />
+                    <Button
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-sm py-2 px-4 opacity-80 hover:opacity-100"
+                    >
+                        📂 IMPORT FROM SPREADSHEET
+                    </Button>
                 </div>
 
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
