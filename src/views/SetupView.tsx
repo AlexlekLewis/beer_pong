@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef } from 'react';
 import { read, utils } from 'xlsx';
 import { useTournament } from '../context/TournamentContext';
@@ -10,11 +11,15 @@ export const SetupView: React.FC = () => {
     const { teams, addTeam, removeTeam, startTournament } = useTournament();
     const [newTeamName, setNewTeamName] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newTeamName.trim()) {
-            addTeam(newTeamName.trim());
-            setNewTeamName('');
+            try {
+                await addTeam(newTeamName.trim());
+                setNewTeamName('');
+            } catch (error: any) {
+                alert(`Failed to add team: ${error.message || error}`);
+            }
         }
     };
 
@@ -30,11 +35,16 @@ export const SetupView: React.FC = () => {
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-            jsonData.forEach(row => {
+            for (const row of jsonData) {
                 if (row[0] && typeof row[0] === 'string' && row[0].trim()) {
-                    addTeam(row[0].trim());
+                    try {
+                        await addTeam(row[0].trim());
+                    } catch (error: any) {
+                        console.error(`Failed to add team ${row[0]}:`, error);
+                        // Optional: collect errors and show summary
+                    }
                 }
-            });
+            }
 
             // Clear input so same file can be selected again if needed
             e.target.value = '';

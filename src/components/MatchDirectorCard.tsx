@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Match, Team } from '../types';
 import { Card } from './Card';
 import { Button } from './Button';
-import { useTournament } from '../context/TournamentContext';
+
 
 interface MatchDirectorCardProps {
     match: Match;

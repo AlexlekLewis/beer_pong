@@ -16,7 +16,10 @@ export const SpectatorView: React.FC = () => {
     const ROTATION_TIME = 10000; // 10s per screen
 
     // --- LOGIC: Determine what to show ---
-    const activeMatches = matches.filter(m => m.round === currentRound && !m.completed && !m.isBye);
+    const activeMatches = React.useMemo(() =>
+        matches.filter(m => m.round === currentRound && !m.completed && !m.isBye),
+        [matches, currentRound]
+    );
     const hasActiveMatches = activeMatches.length > 0;
 
     useEffect(() => {
@@ -37,14 +40,10 @@ export const SpectatorView: React.FC = () => {
                         default: return 'intro';
                     }
                 });
-                // Reset timer wrapper (by clearing effect) - simpler to just rely on re-mount or reset state
             }
         }, 100);
 
         const rotationInterval = setInterval(() => {
-            // Actual rotation logic trigger
-            // (Covered by the detailed timer above? No, the active logic above is for progress bar visual only mostly.)
-            // Better: Just reset active timer.
             setProgress(0);
         }, ROTATION_TIME);
 
@@ -52,13 +51,21 @@ export const SpectatorView: React.FC = () => {
             clearInterval(timer);
             clearInterval(rotationInterval);
         };
-    }, [screen, hasActiveMatches]); // Re-run active match check on screen switch
+    }, [screen, hasActiveMatches]);
+
+    // State for random match to avoid impure render
+    const [randomMatchId, setRandomMatchId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (screen === 'versus' && hasActiveMatches) {
+            const match = activeMatches[Math.floor(Math.random() * activeMatches.length)];
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setRandomMatchId(match.id);
+        }
+    }, [screen, hasActiveMatches, activeMatches]);
 
     // Render Logic
     const renderScreen = () => {
-        // Simple confetti trigger on Leaderboard logic
-        const showConfetti = screen === 'leaderboard';
-
         switch (screen) {
             case 'intro':
                 return (
@@ -71,12 +78,16 @@ export const SpectatorView: React.FC = () => {
                         </div>
                     </div>
                 );
-            case 'versus':
+            case 'versus': {
                 if (!hasActiveMatches) return <div className="text-center text-4xl mt-20">No active matches...</div>;
-                const match = activeMatches[Math.floor(Math.random() * activeMatches.length)];
+
+                const matchIndex = matches.findIndex(m => m.id === randomMatchId);
+                const match = matchIndex !== -1 ? matches[matchIndex] : activeMatches[0]; // Fallback
+
                 const t1 = teams.find(t => t.id === match.team1Id);
                 const t2 = teams.find(t => t.id === match.team2Id);
                 return <VersusCard match={match} team1={t1} team2={t2} />;
+            }
 
             case 'bracket':
                 return (
@@ -96,7 +107,7 @@ export const SpectatorView: React.FC = () => {
                         <Confetti active={true} />
                         <h2 className="text-5xl font-orbitron font-bold text-[var(--primary)] mb-8 text-center drop-shadow-[0_0_15px_var(--primary)]">TOP SQUADS</h2>
                         <div className="grid grid-cols-2 gap-6">
-                            {teams.slice().sort((a, b) => b.wins - a.wins).slice(0, 8).map((t, idx) => (
+                            {teams.slice().sort((a, b) => b.wins - a.wins).slice(0, 8).map((t) => (
                                 <div key={t.id} className="transform scale-125 origin-left mb-4">
                                     <TeamCard team={t} />
                                 </div>

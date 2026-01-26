@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Team, Match, TournamentState, TournamentContextType } from '../types';
 import { supabase } from '../lib/supabase';
@@ -11,7 +13,6 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
     const [currentRound, setCurrentRound] = useState(1);
     const [status, setStatus] = useState<TournamentState['status']>('setup');
     const [winnerId, setWinnerId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
 
     // --- Data Mapper Helper ---
     // (Optional: You might want a better mapper)
@@ -60,12 +61,12 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
             if (matchesData) setMatches(matchesData.map(mapMatch));
 
             const { data: stateData } = await supabase.from('tournament_state').select('*').eq('id', 1).single();
+
             if (stateData) {
                 setCurrentRound(stateData.current_round || 1);
                 setStatus(stateData.status as any || 'setup');
                 setWinnerId(stateData.winner_id || null);
             }
-            setLoading(false);
         };
 
         fetchInitialData();
@@ -129,9 +130,11 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
                 eliminated_in_round: null
             };
 
-            await supabase.from('teams').insert(newTeamData);
+            const { error } = await supabase.from('teams').insert(newTeamData);
+            if (error) throw error;
         } catch (e) {
             console.error("Error adding team:", e);
+            throw e;
         }
     };
 
@@ -328,6 +331,10 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const initiateBuyBackPhase = async () => {
+        await updateState({ status: 'buy_back_phase' });
+    };
+
     const nextRound = async () => {
         try {
             const activeTeams = teams.filter(t => t.status === 'active');
@@ -341,7 +348,11 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
             }
 
             const nextRoundNum = currentRound + 1;
-            await updateState({ current_round: nextRoundNum });
+            // Update state to active and increment round
+            await updateState({
+                status: 'active',
+                current_round: nextRoundNum
+            });
             await generateRoundMatches(nextRoundNum, activeTeams);
         } catch (e) {
             console.error("Error advancing to next round:", e);
@@ -358,8 +369,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         try {
             await supabase.from('teams').update({
                 status: 'active',
-                buy_backs: team.buyBacks + 1,
-                eliminated_in_round: null
+                buy_backs: team.buyBacks + 1
             }).eq('id', teamId);
         } catch (e) {
             console.error("Error buying back team:", e);
@@ -421,6 +431,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
             startTournament,
             recordMatchResult,
             resetMatch,
+            initiateBuyBackPhase,
             nextRound,
             buyBackTeam,
             getBuyBackCost,

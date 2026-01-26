@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef } from 'react';
 
 interface ConfettiProps {
@@ -35,7 +36,7 @@ export const Confetti: React.FC<ConfettiProps> = ({ active, duration = 3000 }) =
         }
 
         let animationId: number;
-        let startTime = Date.now();
+        const startTime = Date.now();
 
         const animate = () => {
             if (Date.now() - startTime > duration) {

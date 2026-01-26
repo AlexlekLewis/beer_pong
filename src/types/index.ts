@@ -26,7 +26,7 @@ export interface Match {
     nextMatchId: string | null; // Pointer to where the winner goes
 }
 
-export type TournamentStatus = 'setup' | 'active' | 'completed';
+export type TournamentStatus = 'setup' | 'active' | 'buy_back_phase' | 'completed';
 
 export interface TournamentState {
     teams: Team[];
@@ -37,12 +37,13 @@ export interface TournamentState {
 }
 
 export interface TournamentContextType extends TournamentState {
-    addTeam: (name: string) => void;
+    addTeam: (name: string) => Promise<void>;
     removeTeam: (id: string) => void;
     startTournament: () => void;
     recordMatchResult: (matchId: string, score1: number, score2: number, winnerId: string) => void;
     resetMatch: (matchId: string) => void;
     nextRound: () => void;
+    initiateBuyBackPhase: () => void;
     buyBackTeam: (teamId: string) => void;
     getBuyBackCost: (round: number) => number;
     resetTournament: () => void;

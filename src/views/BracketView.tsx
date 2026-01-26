@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTournament } from '../context/TournamentContext';
-import type { Match, Team } from '../types';
+import type { Match } from '../types';
 
 export const BracketView: React.FC = () => {
     const { matches, teams } = useTournament();
