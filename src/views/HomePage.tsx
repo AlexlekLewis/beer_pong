@@ -77,7 +77,7 @@ export function HomePage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8">
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-beerpong-main bg-overlay-dark">
             {/* Logo & Title */}
             <motion.div
                 className="text-center mb-12"

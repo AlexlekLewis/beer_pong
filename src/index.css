@@ -528,3 +528,88 @@ h6 {
             0 100%,
             0 12px);
 }
+
+/* ============================================
+   🍺 Beer Pong Background Images
+   ============================================ */
+
+/* Main table background - perfect for home/hero sections */
+.bg-beerpong-main {
+    background-image: url('/assets/images/bg-main.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Action shot - great for tournament pages */
+.bg-beerpong-action {
+    background-image: url('/assets/images/hero-action.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Winner celebration - perfect for results page */
+.bg-beerpong-winner {
+    background-image: url('/assets/images/hero-winner.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Versus showdown - great for bracket/match views */
+.bg-beerpong-versus {
+    background-image: url('/assets/images/versus-showdown.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Splash moment - for modals or accent sections */
+.bg-beerpong-splash {
+    background-image: url('/assets/images/splash-moment.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Repeating pattern - for subtle backgrounds */
+.bg-beerpong-pattern {
+    background-image: url('/assets/images/pattern-tile.png');
+    background-size: 300px;
+    background-repeat: repeat;
+}
+
+/* Dark overlay for text readability on photo backgrounds */
+.bg-overlay-dark {
+    position: relative;
+}
+
+.bg-overlay-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom,
+            rgba(15, 10, 21, 0.7) 0%,
+            rgba(15, 10, 21, 0.85) 50%,
+            rgba(15, 10, 21, 0.95) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bg-overlay-dark>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* Vignette effect for dramatic photos */
+.vignette::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center,
+            transparent 50%,
+            rgba(0, 0, 0, 0.5) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
