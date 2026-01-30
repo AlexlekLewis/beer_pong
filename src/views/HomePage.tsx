@@ -203,103 +203,87 @@ export function HomePage() {
                 isOpen={showLoadModal}
                 onClose={() => { setShowLoadModal(false); setLoadMode('teams'); setImportJson(''); setImportError(''); }}
                 title="📂 LOAD DATA"
-                size="md"
+                size="3xl"
             >
-                <div className="space-y-4">
-                    {/* Tab Selector */}
-                    <div className="flex gap-2 mb-4">
-                        <button
-                            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${loadMode === 'teams' ? 'bg-[var(--gold-main)] text-black' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-white'}`}
-                            onClick={() => setLoadMode('teams')}
-                        >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Left Column - Import Teams */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-bold text-[var(--gold-main)] flex items-center gap-2">
                             📊 Import Teams
-                        </button>
-                        <button
-                            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${loadMode === 'tournament' ? 'bg-[var(--gold-main)] text-black' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-white'}`}
-                            onClick={() => setLoadMode('tournament')}
+                        </h3>
+
+                        <div
+                            className="border-2 border-dashed border-[var(--border)] rounded-xl p-6 text-center hover:border-[var(--gold-main)] transition-colors cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
                         >
-                            💾 Restore Backup
-                        </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".csv,.xlsx,.xls,.tsv"
+                                onChange={handleFileImport}
+                                className="hidden"
+                            />
+                            <div className="text-3xl mb-2">📁</div>
+                            <p className="text-white font-medium mb-1">Click to upload teams file</p>
+                            <p className="text-sm text-[var(--text-muted)]">
+                                Supports: CSV, XLSX, XLS, TSV
+                            </p>
+                        </div>
+
+                        <div className="p-3 bg-[var(--bg-elevated)] rounded-lg text-sm">
+                            <h4 className="font-medium text-white mb-2">Expected format:</h4>
+                            <div className="text-[var(--text-dim)] space-y-1">
+                                <div className="grid grid-cols-3 gap-2 text-xs text-[var(--text-muted)] font-medium">
+                                    <span>Team Name</span>
+                                    <span>Player 1</span>
+                                    <span>Player 2</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-xs">
+                                    <span>Beer Wolves</span>
+                                    <span>John</span>
+                                    <span>Jane</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Teams Import Mode */}
-                    {loadMode === 'teams' && (
-                        <>
-                            <div
-                                className="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center hover:border-[var(--gold-main)] transition-colors cursor-pointer"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".csv,.xlsx,.xls,.tsv"
-                                    onChange={handleFileImport}
-                                    className="hidden"
-                                />
-                                <div className="text-3xl mb-2">📁</div>
-                                <p className="text-white font-medium mb-1">Click to upload teams file</p>
-                                <p className="text-sm text-[var(--text-muted)]">
-                                    Supports: CSV, XLSX, XLS, TSV
-                                </p>
-                            </div>
+                    {/* Divider */}
+                    <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-[var(--border)]" />
 
-                            <div className="p-4 bg-[var(--bg-elevated)] rounded-lg">
-                                <h4 className="text-sm font-medium text-white mb-2">Expected format:</h4>
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="text-[var(--text-muted)]">
-                                            <th className="text-left pb-2">Team Name</th>
-                                            <th className="text-left pb-2">Player 1</th>
-                                            <th className="text-left pb-2">Player 2</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-[var(--text-dim)]">
-                                        <tr>
-                                            <td>Beer Wolves</td>
-                                            <td>John</td>
-                                            <td>Jane</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cup Crushers</td>
-                                            <td>Mike</td>
-                                            <td>Sarah</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </>
-                    )}
+                    {/* Right Column - Restore Backup */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-bold text-[var(--gold-main)] flex items-center gap-2">
+                            💾 Restore Backup
+                        </h3>
 
-                    {/* Tournament Restore Mode */}
-                    {loadMode === 'tournament' && (
-                        <>
-                            <div>
-                                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
-                                    Paste Tournament Backup JSON
-                                </label>
-                                <textarea
-                                    className="input min-h-[150px] font-mono text-sm"
-                                    placeholder='{"id": "...", "name": "...", ...}'
-                                    value={importJson}
-                                    onChange={(e) => setImportJson(e.target.value)}
-                                />
-                            </div>
-                            <Button
-                                variant="primary"
-                                fullWidth
-                                onClick={handleImport}
-                                disabled={!importJson.trim()}
-                                icon="📥"
-                            >
-                                Restore Tournament
-                            </Button>
-                        </>
-                    )}
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
+                                Paste Tournament Backup JSON
+                            </label>
+                            <textarea
+                                className="input min-h-[120px] font-mono text-sm"
+                                placeholder='{"id": "...", "name": "...", ...}'
+                                value={importJson}
+                                onChange={(e) => setImportJson(e.target.value)}
+                            />
+                        </div>
+                        <Button
+                            variant="primary"
+                            fullWidth
+                            onClick={handleImport}
+                            disabled={!importJson.trim()}
+                            icon="📥"
+                        >
+                            Restore Tournament
+                        </Button>
+                    </div>
+                </div>
 
-                    {importError && (
-                        <p className="text-sm text-[var(--danger)]">{importError}</p>
-                    )}
+                {importError && (
+                    <p className="text-sm text-[var(--danger)] mt-4">{importError}</p>
+                )}
 
+                <div className="mt-4 pt-4 border-t border-[var(--border)]">
                     <Button
                         variant="ghost"
                         fullWidth
