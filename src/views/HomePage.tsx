@@ -205,15 +205,13 @@ export function HomePage() {
                 title="📂 LOAD DATA"
                 size="3xl"
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-8">
                     {/* Left Column - Import Teams */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-[var(--gold-main)] flex items-center gap-2">
-                            📊 Import Teams
-                        </h3>
+                    <div className="space-y-3">
+                        <h3 className="text-base font-bold text-[var(--gold-main)]">📊 Import Teams</h3>
 
                         <div
-                            className="border-2 border-dashed border-[var(--border)] rounded-xl p-6 text-center hover:border-[var(--gold-main)] transition-colors cursor-pointer"
+                            className="border-2 border-dashed border-[var(--border)] rounded-lg p-4 text-center hover:border-[var(--gold-main)] transition-colors cursor-pointer"
                             onClick={() => fileInputRef.current?.click()}
                         >
                             <input
@@ -223,50 +221,27 @@ export function HomePage() {
                                 onChange={handleFileImport}
                                 className="hidden"
                             />
-                            <div className="text-3xl mb-2">📁</div>
-                            <p className="text-white font-medium mb-1">Click to upload teams file</p>
-                            <p className="text-sm text-[var(--text-muted)]">
-                                Supports: CSV, XLSX, XLS, TSV
-                            </p>
+                            <div className="text-2xl mb-1">📁</div>
+                            <p className="text-white font-medium text-sm">Click to upload teams file</p>
+                            <p className="text-xs text-[var(--text-muted)]">CSV, XLSX, XLS, TSV</p>
                         </div>
 
-                        <div className="p-3 bg-[var(--bg-elevated)] rounded-lg text-sm">
-                            <h4 className="font-medium text-white mb-2">Expected format:</h4>
-                            <div className="text-[var(--text-dim)] space-y-1">
-                                <div className="grid grid-cols-3 gap-2 text-xs text-[var(--text-muted)] font-medium">
-                                    <span>Team Name</span>
-                                    <span>Player 1</span>
-                                    <span>Player 2</span>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2 text-xs">
-                                    <span>Beer Wolves</span>
-                                    <span>John</span>
-                                    <span>Jane</span>
-                                </div>
-                            </div>
+                        <div className="p-2 bg-[var(--bg-elevated)] rounded text-xs">
+                            <span className="text-[var(--text-muted)]">Format: </span>
+                            <span className="text-[var(--text-dim)]">Team Name, Player 1, Player 2</span>
                         </div>
                     </div>
 
-                    {/* Divider */}
-                    <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-[var(--border)]" />
-
                     {/* Right Column - Restore Backup */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-[var(--gold-main)] flex items-center gap-2">
-                            💾 Restore Backup
-                        </h3>
+                    <div className="space-y-3">
+                        <h3 className="text-base font-bold text-[var(--gold-main)]">💾 Restore Backup</h3>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
-                                Paste Tournament Backup JSON
-                            </label>
-                            <textarea
-                                className="input min-h-[120px] font-mono text-sm"
-                                placeholder='{"id": "...", "name": "...", ...}'
-                                value={importJson}
-                                onChange={(e) => setImportJson(e.target.value)}
-                            />
-                        </div>
+                        <textarea
+                            className="input min-h-[80px] font-mono text-xs"
+                            placeholder='{"id": "...", "name": "...", ...}'
+                            value={importJson}
+                            onChange={(e) => setImportJson(e.target.value)}
+                        />
                         <Button
                             variant="primary"
                             fullWidth
@@ -274,19 +249,18 @@ export function HomePage() {
                             disabled={!importJson.trim()}
                             icon="📥"
                         >
-                            Restore Tournament
+                            Restore
                         </Button>
                     </div>
                 </div>
 
                 {importError && (
-                    <p className="text-sm text-[var(--danger)] mt-4">{importError}</p>
+                    <p className="text-sm text-[var(--danger)] mt-3">{importError}</p>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <div className="mt-3 pt-3 border-t border-[var(--border)] flex justify-center">
                     <Button
                         variant="ghost"
-                        fullWidth
                         onClick={() => setShowLoadModal(false)}
                     >
                         Cancel
