@@ -60,6 +60,7 @@ interface TournamentStore {
     forceAdvanceRound: () => void;
 
     // Data management
+    renameTournament: (name: string) => void;
     exportTournament: () => string;
     importTournament: (json: string) => boolean;
     resetTournament: () => void;
@@ -556,6 +557,16 @@ export const useTournamentStore = create<TournamentStore>()(
                         currentView: 'tournament',
                         pendingBuyBackTeamId: null,
                         wildcardResult: null
+                    });
+                }
+            },
+
+            // Rename tournament
+            renameTournament: (name) => {
+                const { tournament } = get();
+                if (tournament && name.trim()) {
+                    set({
+                        tournament: { ...tournament, name: name.trim() }
                     });
                 }
             },

@@ -15,10 +15,12 @@ export function SetupPage() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [showImport, setShowImport] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showSaveModal, setShowSaveModal] = useState(false);
     const [editingTeam, setEditingTeam] = useState<Team | null>(null);
     const [editName, setEditName] = useState('');
     const [editPlayer1, setEditPlayer1] = useState('');
     const [editPlayer2, setEditPlayer2] = useState('');
+    const [newTournamentName, setNewTournamentName] = useState('');
 
     const {
         tournament,
@@ -26,6 +28,8 @@ export function SetupPage() {
         startTournament,
         removeTeam,
         updateTeam,
+        renameTournament,
+        exportTournament,
         setView,
         resetTournament
     } = useTournamentStore();
@@ -95,6 +99,17 @@ export function SetupPage() {
                 </div>
 
                 <div className="flex gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setNewTournamentName(tournament?.name || '');
+                            setShowSaveModal(true);
+                        }}
+                        icon="💾"
+                    >
+                        Save
+                    </Button>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -284,6 +299,60 @@ export function SetupPage() {
                             className="flex-1"
                         >
                             Save
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Save Tournament Modal */}
+            <Modal
+                isOpen={showSaveModal}
+                onClose={() => setShowSaveModal(false)}
+                title="💾 SAVE TOURNAMENT"
+                size="sm"
+            >
+                <div className="space-y-4">
+                    <Input
+                        label="Tournament Name"
+                        value={newTournamentName}
+                        onChange={(e) => setNewTournamentName(e.target.value)}
+                        placeholder={tournament?.name}
+                    />
+                    <div className="flex gap-3">
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                if (newTournamentName.trim()) {
+                                    renameTournament(newTournamentName.trim());
+                                }
+                                setShowSaveModal(false);
+                                setNewTournamentName('');
+                            }}
+                            className="flex-1"
+                        >
+                            {newTournamentName.trim() ? 'Save Name' : 'Cancel'}
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => {
+                                if (newTournamentName.trim()) {
+                                    renameTournament(newTournamentName.trim());
+                                }
+                                const data = exportTournament();
+                                const blob = new Blob([data], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${(newTournamentName.trim() || tournament?.name || 'tournament').replace(/\s+/g, '_')}.json`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                                setShowSaveModal(false);
+                                setNewTournamentName('');
+                            }}
+                            icon="💾"
+                            className="flex-1"
+                        >
+                            Download Backup
                         </Button>
                     </div>
                 </div>
