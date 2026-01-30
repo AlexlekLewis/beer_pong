@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import type { Team, Match, Tournament, TournamentSettings, TournamentStatus } from '../types';
-import { generateBracket, getMatchesForRound, advanceWinner, isRoundComplete, getRoundLosers } from './bracket';
+import { generateBracket, getMatchesForRound, advanceWinner, isRoundComplete, getRoundLosers, generateNextRoundMatches } from './bracket';
 import { getBuyBackPrice, processBuyBacks } from './buyback';
 import { preSelectWildcard } from './wildcard';
 
@@ -387,13 +387,64 @@ export const useTournamentStore = create<TournamentStore>()(
 
             // Advance to next round
             advanceToNextRound: () => {
-                const { tournament } = get();
+                const { tournament, wildcardResult } = get();
                 if (!tournament) return;
+
+                // Get winners from current round
+                const winners = get().getWinnersFromCurrentRound();
+
+                // Get bought-back teams from decisions
+                const boughtBackTeams = Object.entries(tournament.buyBackDecisions)
+                    .filter(([_, didBuyBack]) => didBuyBack)
+                    .map(([teamId]) => teamId);
+
+                // Get wildcard team if applicable
+                const wildcardTeamId = wildcardResult?.team?.id;
+
+                // Build next round pool: winners + bought-back + wildcard
+                const nextRoundPool = [...winners, ...boughtBackTeams];
+                if (wildcardTeamId && !nextRoundPool.includes(wildcardTeamId)) {
+                    nextRoundPool.push(wildcardTeamId);
+                }
+
+                const nextRound = tournament.currentRound + 1;
+
+                // Check if tournament should be complete (only 1 team left)
+                if (nextRoundPool.length <= 1) {
+                    // Tournament is complete
+                    set({
+                        tournament: {
+                            ...tournament,
+                            currentRound: nextRound,
+                            status: 'completed',
+                            eliminatedThisRound: [],
+                            buyBackDecisions: {}
+                        },
+                        currentView: 'results',
+                        pendingBuyBackTeamId: null
+                    });
+                    return;
+                }
+
+                // Generate new matches for the next round
+                // We need to clear old future matches and regenerate
+                const completedMatches = tournament.matches.filter(m => m.round < nextRound);
+                const newMatches = generateNextRoundMatches(
+                    completedMatches,
+                    nextRoundPool,
+                    nextRound
+                );
+
+                // Recalculate total rounds based on remaining teams
+                const remainingRounds = Math.ceil(Math.log2(nextRoundPool.length));
+                const newTotalRounds = tournament.currentRound + remainingRounds;
 
                 set({
                     tournament: {
                         ...tournament,
-                        currentRound: tournament.currentRound + 1,
+                        matches: newMatches,
+                        totalRounds: Math.max(tournament.totalRounds, newTotalRounds),
+                        currentRound: nextRound,
                         status: 'in_progress',
                         eliminatedThisRound: [],
                         buyBackDecisions: {}
