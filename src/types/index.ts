@@ -1,51 +1,58 @@
-export type TeamStatus = 'active' | 'eliminated' | 'buyback-pending';
+// Party Lions - Beer Pong Tournament Types
+
+export type TeamStatus = 'active' | 'eliminated' | 'bought_back' | 'wildcarded';
+export type MatchStatus = 'pending' | 'in_progress' | 'completed';
+export type TournamentStatus = 'setup' | 'in_progress' | 'buy_back_phase' | 'wildcard_phase' | 'completed';
 
 export interface Team {
     id: string;
     name: string;
+    player1?: string;
+    player2?: string;
     status: TeamStatus;
-    wins: number;
-    losses: number;
-    buyBacks: number;
-    eliminatedInRound?: number; // Round number when eliminated
-    seed: number; // Initial seed
+    eliminatedInRound?: number;
+    buyBackCount: number;
+    isWildcard: boolean;
 }
 
 export interface Match {
     id: string;
-    round: number; // 1, 2, 3...
-    matchNumber: number; // 1, 2, 3 within the round
-    team1Id: string | null; // null if waiting for previous match
+    round: number;
+    position: number;
+    team1Id: string | null;
     team2Id: string | null;
-    score1: number;
-    score2: number;
     winnerId: string | null;
-    completed: boolean;
-    completedAt?: number; // Timestamp of completion
-    isBye: boolean; // If true, team1 automatically advances
-    nextMatchId: string | null; // Pointer to where the winner goes
+    loserId: string | null;
+    status: MatchStatus;
+    isByeMatch: boolean;
 }
 
-export type TournamentStatus = 'setup' | 'active' | 'buy_back_phase' | 'completed';
+export interface TournamentSettings {
+    allowBuyBacks: boolean;
+    buyBackTimeLimit?: number;
+    enableSoundEffects: boolean;
+    enableConfetti: boolean;
+    wildcardEnabled: boolean;
+}
 
-export interface TournamentState {
+export interface Tournament {
+    id: string;
+    name: string;
+    createdAt: string;
+    currentRound: number;
+    totalRounds: number;
+    status: TournamentStatus;
     teams: Team[];
     matches: Match[];
-    currentRound: number;
-    status: TournamentStatus;
-    winnerId: string | null;
+    buyBackBasePrice: number;
+    buyBackIncrement: number;
+    settings: TournamentSettings;
+    eliminatedThisRound: string[]; // Team IDs eliminated in current round
+    buyBackDecisions: Record<string, boolean>; // teamId -> bought back?
 }
 
-export interface TournamentContextType extends TournamentState {
-    addTeam: (name: string) => Promise<void>;
-    removeTeam: (id: string) => void;
-    startTournament: () => void;
-    recordMatchResult: (matchId: string, score1: number, score2: number, winnerId: string) => void;
-    resetMatch: (matchId: string) => void;
-    nextRound: () => void;
-    initiateBuyBackPhase: () => void;
-    buyBackTeam: (teamId: string) => void;
-    getBuyBackCost: (round: number) => number;
-    resetTournament: () => void;
-    forceUpdateTeam: (id: string, updates: Partial<Team>) => void;
+export interface ImportResult {
+    success: boolean;
+    teams: Omit<Team, 'id' | 'status' | 'buyBackCount' | 'isWildcard'>[];
+    errors: string[];
 }
