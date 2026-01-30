@@ -121,8 +121,8 @@ export function ModeratorDashboard() {
                             <div
                                 key={team.id}
                                 className={`flex items-center justify-between p-2 rounded-lg ${team.status === 'eliminated'
-                                        ? 'bg-red-500/10 border border-red-500/20'
-                                        : 'bg-[var(--bg-elevated)]'
+                                    ? 'bg-red-500/10 border border-red-500/20'
+                                    : 'bg-[var(--bg-elevated)]'
                                     }`}
                             >
                                 <span className={`text-sm ${team.status === 'eliminated' ? 'text-red-400 line-through' : 'text-white'
@@ -191,7 +191,6 @@ export function ModeratorDashboard() {
                     variant={tournament.status === 'setup' ? 'primary' : 'ghost'}
                     onClick={() => setView('setup')}
                     icon="📝"
-                    disabled={tournament.status !== 'setup'}
                 >
                     Team Setup
                 </Button>
@@ -199,7 +198,6 @@ export function ModeratorDashboard() {
                     variant={tournament.status === 'in_progress' ? 'primary' : 'ghost'}
                     onClick={() => setView('tournament')}
                     icon="🏓"
-                    disabled={tournament.status === 'setup'}
                 >
                     View Bracket
                 </Button>
@@ -207,7 +205,6 @@ export function ModeratorDashboard() {
                     variant={tournament.status === 'completed' ? 'primary' : 'ghost'}
                     onClick={() => setView('results')}
                     icon="🏆"
-                    disabled={tournament.status !== 'completed'}
                 >
                     View Results
                 </Button>
