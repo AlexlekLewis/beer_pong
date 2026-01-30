@@ -31,6 +31,7 @@ export function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * Generate initial bracket matches for first round
+ * Creates only the necessary matches based on team count
  */
 export function generateBracket(teams: Team[], shouldShuffle: boolean = true): { matches: Match[], totalRounds: number } {
     const numTeams = teams.length;
@@ -46,17 +47,29 @@ export function generateBracket(teams: Team[], shouldShuffle: boolean = true): {
     // Optionally shuffle teams for random seeding
     const seededTeams = shouldShuffle ? shuffleArray([...teams]) : [...teams];
 
-    // Pad with null for bye slots
-    const paddedTeams: (Team | null)[] = [...seededTeams];
-    for (let i = 0; i < numByes; i++) {
-        paddedTeams.push(null);
+    // Instead of padding with nulls evenly, we want to distribute byes 
+    // to spread out which teams get automatic advances
+    // For simplicity, place byes at the end positions
+    const paddedTeams: (Team | null)[] = [];
+
+    // Calculate how many first-round matches we'll have with actual teams
+    // Some teams will get byes (auto-advance to round 2)
+    const numFirstRoundMatches = bracketSize / 2;
+
+    // Distribute teams into slots, leaving nulls for byes
+    // Byes go to the higher-seeded positions at the end
+    for (let i = 0; i < bracketSize; i++) {
+        if (i < numTeams) {
+            paddedTeams.push(seededTeams[i]);
+        } else {
+            paddedTeams.push(null);
+        }
     }
 
     const matches: Match[] = [];
 
     // Generate all rounds
-    let matchId = 0;
-    let matchesInRound = bracketSize / 2;
+    let matchesInRound = numFirstRoundMatches;
 
     for (let round = 1; round <= totalRounds; round++) {
         for (let position = 0; position < matchesInRound; position++) {
@@ -80,20 +93,44 @@ export function generateBracket(teams: Team[], shouldShuffle: boolean = true): {
                 match.team1Id = paddedTeams[team1Index]?.id || null;
                 match.team2Id = paddedTeams[team2Index]?.id || null;
 
-                // Check for bye match (one team is null)
-                if (!match.team1Id || !match.team2Id) {
+                // Check for bye match (one or both teams are null)
+                const hasTeam1 = match.team1Id !== null;
+                const hasTeam2 = match.team2Id !== null;
+
+                if (!hasTeam1 && !hasTeam2) {
+                    // Both slots empty - this is a completely empty bye match
+                    // Mark as completed with no winner (will be skipped)
+                    match.isByeMatch = true;
+                    match.status = 'completed';
+                } else if (!hasTeam1 || !hasTeam2) {
+                    // One team gets a bye (auto-advance)
                     match.isByeMatch = true;
                     match.status = 'completed';
                     match.winnerId = match.team1Id || match.team2Id;
-                    match.loserId = null; // No loser in bye match
+                    match.loserId = null;
                 }
             }
 
             matches.push(match);
-            matchId++;
         }
 
         matchesInRound = matchesInRound / 2;
+    }
+
+    // Auto-advance bye winners to next round
+    const round1Matches = matches.filter(m => m.round === 1);
+    for (const byeMatch of round1Matches.filter(m => m.isByeMatch && m.winnerId)) {
+        const nextMatch = getNextMatch(matches, byeMatch);
+        if (nextMatch) {
+            const idx = matches.findIndex(m => m.id === nextMatch.id);
+            if (idx !== -1) {
+                if (byeMatch.position % 2 === 0) {
+                    matches[idx] = { ...matches[idx], team1Id: byeMatch.winnerId };
+                } else {
+                    matches[idx] = { ...matches[idx], team2Id: byeMatch.winnerId };
+                }
+            }
+        }
     }
 
     return { matches, totalRounds };

@@ -153,7 +153,16 @@ export function Bracket({ onSelectWinner }: BracketProps) {
         <div className="overflow-x-auto pb-4">
             <div className="flex gap-8 min-w-fit px-4">
                 {rounds.map((round) => {
-                    const matches = getMatchesForRound(tournament.matches, round);
+                    const allMatches = getMatchesForRound(tournament.matches, round);
+                    // Filter out completely empty bye matches (both teams are TBD)
+                    const matches = allMatches.filter(match => {
+                        // Show if either team exists OR if it's not a bye match
+                        return match.team1Id || match.team2Id || !match.isByeMatch;
+                    });
+
+                    // Skip rendering this round column if no visible matches
+                    if (matches.length === 0) return null;
+
                     const isCurrentRound = round === tournament.currentRound;
                     const isFinalRound = round === tournament.totalRounds;
 
@@ -182,7 +191,7 @@ export function Bracket({ onSelectWinner }: BracketProps) {
                                     const team2 = match.team2Id ? getTeamById(match.team2Id) : undefined;
                                     const isActive = isCurrentRound &&
                                         match.status !== 'completed' &&
-                                        team1 && team2;
+                                        !!team1 && !!team2;
 
                                     return (
                                         <MatchNode
