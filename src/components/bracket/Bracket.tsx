@@ -31,10 +31,10 @@ export function MatchNode({
             className={`
         relative rounded-xl border-2 transition-all
         ${isActive
-                    ? 'border-[var(--gold-main)] shadow-lg shadow-[var(--gold-glow)] bg-[var(--bg-card)]'
+                    ? 'border-[var(--gold-main)] shadow-lg shadow-[var(--gold-glow)] bg-[#1e1428]'
                     : isComplete
-                        ? 'border-[var(--success)]/30 bg-[var(--bg-elevated)]'
-                        : 'border-[var(--border)] bg-[var(--bg-elevated)]'
+                        ? 'border-[var(--success)]/30 bg-[#1e1428]'
+                        : 'border-[var(--border)] bg-[#1e1428]'
                 }
         ${isFinal ? 'p-6' : 'p-3'}
       `}
@@ -173,7 +173,7 @@ export function Bracket({ onSelectWinner }: BracketProps) {
                 text-center py-2 px-4 rounded-lg
                 ${isCurrentRound
                                     ? 'bg-[var(--gold-main)] text-black'
-                                    : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
+                                    : 'bg-[#1e1428] text-[var(--text-muted)]'
                                 }
               `}>
                                 <h3 className="font-bold text-sm tracking-wider">

@@ -61,7 +61,7 @@ export function TournamentPage() {
     const champion = finalMatch?.winnerId ? getTeamById(finalMatch.winnerId) : null;
 
     return (
-        <div className="min-h-screen p-4 md:p-8 bg-lions-showdown bg-overlay-dark">
+        <div className="min-h-screen p-4 md:p-8 bg-lions-showdown bg-fixed has-bg-image">
             {/* Header */}
             <motion.div
                 className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
