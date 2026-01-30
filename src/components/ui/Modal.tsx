@@ -1,7 +1,7 @@
 // Party Lions - Modal Component
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 interface ModalProps {
     isOpen: boolean;
@@ -60,7 +60,7 @@ export function Modal({
                         exit={{ opacity: 0 }}
                     >
                         <motion.div
-                            className={`glass-panel-strong w-full ${sizeClasses[size]} relative`}
+                            className={`glass-panel-strong w-full ${sizeClasses[size]} relative max-h-[90vh] flex flex-col`}
                             initial={{ scale: 0.9, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 20 }}
@@ -87,7 +87,7 @@ export function Modal({
                             )}
 
                             {/* Content */}
-                            <div className="p-5">
+                            <div className="p-5 overflow-auto flex-1">
                                 {children}
                             </div>
                         </motion.div>
