@@ -173,7 +173,7 @@ export function TournamentPage() {
 
             {/* Bracket */}
             <motion.div
-                className="glass-panel p-4 md:p-6 overflow-hidden"
+                className="p-4 md:p-6 overflow-hidden"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
