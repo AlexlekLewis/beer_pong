@@ -565,6 +565,14 @@ h6 {
     background-repeat: no-repeat;
 }
 
+/* Lions Showdown - epic bracket background */
+.bg-lions-showdown {
+    background-image: url('/assets/images/lions-showdown.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 /* Splash moment - for modals or accent sections */
 .bg-beerpong-splash {
     background-image: url('/assets/images/splash-moment.png');
