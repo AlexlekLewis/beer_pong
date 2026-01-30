@@ -1,20 +1,23 @@
 // Party Lions - Home Page
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useTournamentStore } from '../lib/store';
+import { importSpreadsheet } from '../lib/import';
 
 export function HomePage() {
     const [showNewModal, setShowNewModal] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [loadMode, setLoadMode] = useState<'teams' | 'tournament'>('teams');
     const [tournamentName, setTournamentName] = useState('');
     const [importJson, setImportJson] = useState('');
     const [importError, setImportError] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { createTournament, importTournament, tournament, setView } = useTournamentStore();
+    const { createTournament, importTournament, addTeams, tournament, setView } = useTournamentStore();
 
     const handleCreate = () => {
         if (!tournamentName.trim()) return;
@@ -41,6 +44,35 @@ export function HomePage() {
             } else {
                 setView('tournament');
             }
+        }
+    };
+
+    const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImportError('');
+
+        try {
+            const result = await importSpreadsheet(file);
+            if (result.success && result.teams.length > 0) {
+                // If no tournament exists, create one first
+                if (!tournament) {
+                    createTournament(file.name.replace(/\.[^/.]+$/, '') || 'Imported Tournament');
+                }
+                addTeams(result.teams);
+                setShowLoadModal(false);
+                setView('setup');
+            } else {
+                setImportError(result.errors.join('\n') || 'No teams found in file');
+            }
+        } catch (err) {
+            setImportError('Failed to read file');
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -169,44 +201,112 @@ export function HomePage() {
             {/* Load Tournament Modal */}
             <Modal
                 isOpen={showLoadModal}
-                onClose={() => setShowLoadModal(false)}
-                title="📂 LOAD TOURNAMENT"
+                onClose={() => { setShowLoadModal(false); setLoadMode('teams'); setImportJson(''); setImportError(''); }}
+                title="📂 LOAD DATA"
                 size="md"
             >
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
-                            Paste Tournament JSON
-                        </label>
-                        <textarea
-                            className="input min-h-[150px] font-mono text-sm"
-                            placeholder='{"id": "...", "name": "...", ...}'
-                            value={importJson}
-                            onChange={(e) => setImportJson(e.target.value)}
-                        />
-                        {importError && (
-                            <p className="mt-2 text-sm text-[var(--danger)]">{importError}</p>
-                        )}
+                    {/* Tab Selector */}
+                    <div className="flex gap-2 mb-4">
+                        <button
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${loadMode === 'teams' ? 'bg-[var(--gold-main)] text-black' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-white'}`}
+                            onClick={() => setLoadMode('teams')}
+                        >
+                            📊 Import Teams
+                        </button>
+                        <button
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${loadMode === 'tournament' ? 'bg-[var(--gold-main)] text-black' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-white'}`}
+                            onClick={() => setLoadMode('tournament')}
+                        >
+                            💾 Restore Backup
+                        </button>
                     </div>
 
-                    <div className="flex gap-3">
-                        <Button
-                            variant="ghost"
-                            onClick={() => setShowLoadModal(false)}
-                            className="flex-1"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={handleImport}
-                            disabled={!importJson.trim()}
-                            className="flex-1"
-                            icon="📥"
-                        >
-                            Import
-                        </Button>
-                    </div>
+                    {/* Teams Import Mode */}
+                    {loadMode === 'teams' && (
+                        <>
+                            <div
+                                className="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center hover:border-[var(--gold-main)] transition-colors cursor-pointer"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".csv,.xlsx,.xls,.tsv"
+                                    onChange={handleFileImport}
+                                    className="hidden"
+                                />
+                                <div className="text-3xl mb-2">📁</div>
+                                <p className="text-white font-medium mb-1">Click to upload teams file</p>
+                                <p className="text-sm text-[var(--text-muted)]">
+                                    Supports: CSV, XLSX, XLS, TSV
+                                </p>
+                            </div>
+
+                            <div className="p-4 bg-[var(--bg-elevated)] rounded-lg">
+                                <h4 className="text-sm font-medium text-white mb-2">Expected format:</h4>
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="text-[var(--text-muted)]">
+                                            <th className="text-left pb-2">Team Name</th>
+                                            <th className="text-left pb-2">Player 1</th>
+                                            <th className="text-left pb-2">Player 2</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-[var(--text-dim)]">
+                                        <tr>
+                                            <td>Beer Wolves</td>
+                                            <td>John</td>
+                                            <td>Jane</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cup Crushers</td>
+                                            <td>Mike</td>
+                                            <td>Sarah</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Tournament Restore Mode */}
+                    {loadMode === 'tournament' && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
+                                    Paste Tournament Backup JSON
+                                </label>
+                                <textarea
+                                    className="input min-h-[150px] font-mono text-sm"
+                                    placeholder='{"id": "...", "name": "...", ...}'
+                                    value={importJson}
+                                    onChange={(e) => setImportJson(e.target.value)}
+                                />
+                            </div>
+                            <Button
+                                variant="primary"
+                                fullWidth
+                                onClick={handleImport}
+                                disabled={!importJson.trim()}
+                                icon="📥"
+                            >
+                                Restore Tournament
+                            </Button>
+                        </>
+                    )}
+
+                    {importError && (
+                        <p className="text-sm text-[var(--danger)]">{importError}</p>
+                    )}
+
+                    <Button
+                        variant="ghost"
+                        fullWidth
+                        onClick={() => setShowLoadModal(false)}
+                    >
+                        Cancel
+                    </Button>
                 </div>
             </Modal>
         </div>
