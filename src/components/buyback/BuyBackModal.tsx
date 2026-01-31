@@ -8,9 +8,10 @@ import { formatPrice } from '../../lib/buyback';
 
 interface BuyBackModalProps {
     isOpen: boolean;
+    onDismiss?: () => void;
 }
 
-export function BuyBackModal({ isOpen }: BuyBackModalProps) {
+export function BuyBackModal({ isOpen, onDismiss }: BuyBackModalProps) {
     const {
         pendingBuyBackTeamId,
         getTeamById,
@@ -32,7 +33,7 @@ export function BuyBackModal({ isOpen }: BuyBackModalProps) {
     };
 
     return (
-        <Modal isOpen={isOpen} showClose={false} size="md">
+        <Modal isOpen={isOpen} onClose={onDismiss} showClose={true} size="md">
             <div className="text-center">
                 {/* Header */}
                 <motion.div

@@ -565,12 +565,18 @@ export const useTournamentStore = create<TournamentStore>()(
                     status = 'in_progress';
                 }
 
+                // Remove loser from eliminatedThisRound
+                const eliminatedThisRound = tournament.eliminatedThisRound.filter(
+                    id => id !== match.loserId
+                );
+
                 set({
                     tournament: {
                         ...tournament,
                         matches,
                         teams,
-                        status
+                        status,
+                        eliminatedThisRound
                     }
                 });
             },

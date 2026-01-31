@@ -22,6 +22,7 @@ export function TournamentPage() {
         exportTournament,
         resetTournament,
         pendingBuyBackTeamId,
+        setPendingBuyBack,
         getTeamById
     } = useTournamentStore();
 
@@ -154,9 +155,24 @@ export function TournamentPage() {
                     <p className="text-lg font-bold text-[var(--purple-main)]">
                         💰 BUY-BACK PHASE
                     </p>
-                    <p className="text-sm text-[var(--text-muted)]">
+                    <p className="text-sm text-[var(--text-muted)] mb-3">
                         Eliminated teams can buy back into the next round
                     </p>
+
+                    {/* Show Resume Button if modal is closed but decisions pending */}
+                    {!pendingBuyBackTeamId && tournament.eliminatedThisRound.some(id => !tournament.buyBackDecisions[id]) && (
+                        <Button
+                            variant="buyback"
+                            size="sm"
+                            onClick={() => {
+                                const nextId = tournament.eliminatedThisRound.find(id => !tournament.buyBackDecisions[id]);
+                                if (nextId) setPendingBuyBack(nextId);
+                            }}
+                            icon="▶️"
+                        >
+                            RESUME BUY-BACKS
+                        </Button>
+                    )}
                 </motion.div>
             )}
 
@@ -236,7 +252,10 @@ export function TournamentPage() {
             </motion.div>
 
             {/* Buy-Back Modal */}
-            <BuyBackModal isOpen={isBuyBackPhase && !!pendingBuyBackTeamId} />
+            <BuyBackModal
+                isOpen={isBuyBackPhase && !!pendingBuyBackTeamId}
+                onDismiss={() => setPendingBuyBack(null)}
+            />
 
             {/* Export Modal */}
             <Modal
