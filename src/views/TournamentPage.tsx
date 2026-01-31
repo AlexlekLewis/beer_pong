@@ -23,7 +23,9 @@ export function TournamentPage() {
         resetTournament,
         pendingBuyBackTeamId,
         setPendingBuyBack,
-        getTeamById
+        getTeamById,
+        undoLastMatch,
+        lastCompletedMatchId
     } = useTournamentStore();
 
     if (!tournament) {
@@ -94,6 +96,19 @@ export function TournamentPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Undo Action (Visible Helper) */}
+                    {!!lastCompletedMatchId && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={undoLastMatch}
+                            icon="↩️"
+                            className="text-[var(--text-muted)] hover:text-white"
+                        >
+                            Undo
+                        </Button>
+                    )}
+
                     {/* Buy-back price indicator */}
                     {tournament.settings.allowBuyBacks && !isComplete && (
                         <PriceDisplay
