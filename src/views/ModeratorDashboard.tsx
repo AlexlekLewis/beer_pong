@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { useTournamentStore } from '../lib/store';
 import { SettingsPanel } from '../components/dashboard/SettingsPanel';
 import { BracketControls } from '../components/dashboard/BracketControls';
+import { Soundboard } from '../components/dashboard/Soundboard';
 
 export function ModeratorDashboard() {
     const { tournament, setView, resetTournament, exportTournament } = useTournamentStore();
@@ -79,6 +80,11 @@ export function ModeratorDashboard() {
 
             {/* Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+                {/* Soundboard - Full width on mobile, top priority */}
+                <div className="lg:col-span-2">
+                    <Soundboard />
+                </div>
+
                 {/* Settings Panel */}
                 <SettingsPanel />
 
