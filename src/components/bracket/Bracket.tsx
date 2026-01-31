@@ -11,8 +11,8 @@ interface MatchNodeProps {
     team1?: Team;
     team2?: Team;
     isActive?: boolean;
-    isFinal?: boolean;
     onSelectWinner?: (teamId: string) => void;
+    onUndoMatch?: () => void;
 }
 
 export function MatchNode({
@@ -22,6 +22,7 @@ export function MatchNode({
     isActive = false,
     isFinal = false,
     onSelectWinner,
+    onUndoMatch,
 }: MatchNodeProps) {
     const isComplete = match.status === 'completed';
     const isPending = match.status === 'pending';
@@ -46,6 +47,20 @@ export function MatchNode({
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--gold-main)] text-black px-3 py-1 rounded text-xs font-bold tracking-wider">
                     🏆 FINAL
                 </div>
+            )}
+
+            {/* Undo Button for completed matches */}
+            {isComplete && onUndoMatch && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onUndoMatch();
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-white hover:border-[var(--primary)] transition-colors z-10"
+                    title="Undo Match Result"
+                >
+                    ↩️
+                </button>
             )}
 
             <div className="space-y-2">
@@ -131,9 +146,10 @@ function TeamSlot({ team, isWinner, isLoser, isClickable, onClick }: TeamSlotPro
 // Full Bracket View
 interface BracketProps {
     onSelectWinner?: (matchId: string, winnerId: string) => void;
+    onUndoMatch?: (matchId: string) => void;
 }
 
-export function Bracket({ onSelectWinner }: BracketProps) {
+export function Bracket({ onSelectWinner, onUndoMatch }: BracketProps) {
     const { tournament, getTeamById } = useTournamentStore();
 
     if (!tournament) return null;
@@ -204,6 +220,7 @@ export function Bracket({ onSelectWinner }: BracketProps) {
                                             onSelectWinner={(winnerId) =>
                                                 onSelectWinner?.(match.id, winnerId)
                                             }
+                                            onUndoMatch={() => onUndoMatch?.(match.id)}
                                         />
                                     );
                                 })}

@@ -16,6 +16,8 @@ export function TournamentPage() {
     const {
         tournament,
         setMatchWinner,
+        restartMatch,
+        finalizeRound,
         setView,
         exportTournament,
         resetTournament,
@@ -27,6 +29,10 @@ export function TournamentPage() {
         return null;
     }
 
+    // Helper to check round completion
+    const currentRoundMatches = tournament.matches.filter(m => m.round === tournament.currentRound);
+    const isRoundComplete = currentRoundMatches.every(m => m.status === 'completed');
+
     const handleSelectWinner = (matchId: string, winnerId: string) => {
         // Fire celebration
         fireCelebration();
@@ -34,9 +40,15 @@ export function TournamentPage() {
         // Update match
         setMatchWinner(matchId, winnerId);
 
-        // Check if tournament is complete
-        if (tournament.currentRound === tournament.totalRounds) {
+        // Check if tournament is complete (visual only now, logic handled by finalization)
+        if (tournament.currentRound === tournament.totalRounds && isRoundComplete) {
             fireWinnerConfetti();
+        }
+    };
+
+    const handleUndoMatch = (matchId: string) => {
+        if (confirm("Undo this match result?")) {
+            restartMatch(matchId);
         }
     };
 
@@ -178,7 +190,7 @@ export function TournamentPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
             >
-                <Bracket onSelectWinner={handleSelectWinner} />
+                <Bracket onSelectWinner={handleSelectWinner} onUndoMatch={handleUndoMatch} />
             </motion.div>
 
             {/* Footer Actions */}
@@ -188,6 +200,22 @@ export function TournamentPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
             >
+                {/* Manual Progression Button */}
+                {isRoundComplete && !isComplete && !isBuyBackPhase && !isWildcardPhase && (
+                    <Button
+                        variant="primary"
+                        onClick={finalizeRound}
+                        className="animate-pulse"
+                        icon="➡️"
+                    >
+                        {tournament.currentRound === tournament.totalRounds
+                            ? "COMPLETE TOURNAMENT"
+                            : tournament.settings.allowBuyBacks
+                                ? "PROCEED TO BUY-BACK PHASE"
+                                : "START NEXT ROUND"}
+                    </Button>
+                )}
+
                 {isComplete && (
                     <>
                         <Button variant="primary" onClick={() => setView('results')} icon="🏆">

@@ -70,6 +70,7 @@ interface TournamentStore {
     getCurrentBuyBackPrice: () => number;
     getWinnersFromCurrentRound: () => string[];
     getEliminatedThisRound: () => Team[];
+    finalizeRound: () => void;
 }
 
 export const useTournamentStore = create<TournamentStore>()(
@@ -248,28 +249,21 @@ export const useTournamentStore = create<TournamentStore>()(
                     );
                 }
 
-                // Check if round is complete
+                // Check if round is complete (for UI feedback only, don't change status yet)
                 const roundComplete = isRoundComplete(matches, tournament.currentRound);
-                let status: TournamentStatus = tournament.status;
 
-                if (roundComplete) {
-                    // Check if this was the final
-                    if (tournament.currentRound === tournament.totalRounds) {
-                        status = 'completed';
-                    } else if (tournament.settings.allowBuyBacks && eliminatedThisRound.length > 0) {
-                        status = 'buy_back_phase';
-                    }
-                }
+                // NO AUTOMATIC STATUS CHANGE HERE
+                // We stay in 'in_progress' until user explicitly clicks "Next Round" / "Buyback Phase"
 
                 set({
                     tournament: {
                         ...tournament,
                         matches,
                         teams,
-                        status,
+                        // status: Kept as is (in_progress)
                         eliminatedThisRound
                     },
-                    pendingBuyBackTeamId: status === 'buy_back_phase' ? eliminatedThisRound[0] || null : null
+                    // pendingBuyBackTeamId: null // Don't start buybacks yet
                 });
             },
 
@@ -691,6 +685,58 @@ export const useTournamentStore = create<TournamentStore>()(
                 return tournament.teams.filter(t =>
                     tournament.eliminatedThisRound.includes(t.id)
                 );
+            },
+
+            // Finalize round (explicit trigger)
+            finalizeRound: () => {
+                const { tournament } = get();
+                if (!tournament) return;
+
+                const roundMatches = getMatchesForRound(tournament.matches, tournament.currentRound);
+                const allComplete = roundMatches.every(m => m.status === 'completed');
+
+                if (!allComplete) return;
+
+                let status: TournamentStatus = tournament.status;
+                let pendingBuyBackTeamId = null;
+
+                // Check if this was the final
+                if (tournament.currentRound === tournament.totalRounds) {
+                    status = 'completed';
+                    set({
+                        tournament: { ...tournament, status },
+                        currentView: 'results'
+                    });
+                    return;
+                }
+
+                // If not final day, check buybacks
+                if (tournament.settings.allowBuyBacks && tournament.eliminatedThisRound.length > 0) {
+                    status = 'buy_back_phase';
+                    pendingBuyBackTeamId = tournament.eliminatedThisRound[0] || null;
+                } else {
+                    // Go straight to logic to advance logic if no buybacks needed? 
+                    // Actually store.advanceToNextRound handles everything, but 'finalizeRound' 
+                    // is strictly for transitioning state to 'buy_back_phase' OR advancing if no buybacks.
+
+                    if (status === 'in_progress') {
+                        // If we skip buybacks, we just call advanceToNextRound immediately?
+                        // Or we set status to something temporary?
+                        // Let's assume finalizeRound enters the transitional phase.
+
+                        // If no buybacks allowed/needed, just advance.
+                        get().advanceToNextRound();
+                        return;
+                    }
+                }
+
+                set({
+                    tournament: {
+                        ...tournament,
+                        status
+                    },
+                    pendingBuyBackTeamId
+                });
             }
         }),
         {
