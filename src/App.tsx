@@ -7,6 +7,9 @@ import { TournamentPage } from './views/TournamentPage';
 import { WildcardPage } from './views/WildcardPage';
 import { ResultsPage } from './views/ResultsPage';
 import { ModeratorDashboard } from './views/ModeratorDashboard';
+import { KeyboardShortcutsListener } from './components/effects/KeyboardShortcutsListener';
+import { SaveIndicator } from './components/ui/SaveIndicator';
+import { BottomNav } from './components/ui/BottomNav';
 
 function App() {
     const { currentView, tournament } = useTournamentStore();
@@ -17,23 +20,21 @@ function App() {
         return <HomePage />;
     }
 
-    // Render current view
-    switch (currentView) {
-        case 'home':
-            return <HomePage />;
-        case 'setup':
-            return <SetupPage />;
-        case 'tournament':
-            return <TournamentPage />;
-        case 'wildcard':
-            return <WildcardPage />;
-        case 'results':
-            return <ResultsPage />;
-        case 'dashboard':
-            return <ModeratorDashboard />;
-        default:
-            return <HomePage />;
-    }
+    return (
+        <>
+            <KeyboardShortcutsListener />
+            <SaveIndicator />
+            <BottomNav />
+            <div className="min-h-screen pb-20 lg:pb-0">
+                {currentView === 'home' && <HomePage />}
+                {currentView === 'setup' && <SetupPage />}
+                {currentView === 'tournament' && <TournamentPage />}
+                {currentView === 'wildcard' && <WildcardPage />}
+                {currentView === 'results' && <ResultsPage />}
+                {currentView === 'dashboard' && <ModeratorDashboard />}
+            </div>
+        </>
+    );
 }
 
 export default App;

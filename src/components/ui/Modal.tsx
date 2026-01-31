@@ -33,13 +33,23 @@ export function Modal({
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+
+            // Handle Escape key
+            const handleEscape = (e: KeyboardEvent) => {
+                if (e.key === 'Escape' && onClose) {
+                    onClose();
+                }
+            };
+            window.addEventListener('keydown', handleEscape);
+
+            return () => {
+                document.body.style.overflow = 'unset';
+                window.removeEventListener('keydown', handleEscape);
+            };
         } else {
             document.body.style.overflow = 'unset';
         }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
+    }, [isOpen, onClose]);
 
     return (
         <AnimatePresence>

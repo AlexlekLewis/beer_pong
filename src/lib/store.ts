@@ -25,6 +25,7 @@ interface TournamentStore {
     currentView: ViewType;
     pendingBuyBackTeamId: string | null;
     wildcardResult: { team: Team; index: number } | null;
+    lastCompletedMatchId: string | null;
 
     // Navigation
     setView: (view: ViewType) => void;
@@ -40,6 +41,7 @@ interface TournamentStore {
 
     // Match flow
     setMatchWinner: (matchId: string, winnerId: string) => void;
+    undoLastMatch: () => void;
 
     // Buy-back flow
     setPendingBuyBack: (teamId: string | null) => void;
@@ -80,6 +82,7 @@ export const useTournamentStore = create<TournamentStore>()(
             currentView: 'home',
             pendingBuyBackTeamId: null,
             wildcardResult: null,
+            lastCompletedMatchId: null,
 
             // Navigation
             setView: (view) => set({ currentView: view }),
@@ -263,8 +266,21 @@ export const useTournamentStore = create<TournamentStore>()(
                         // status: Kept as is (in_progress)
                         eliminatedThisRound
                     },
-                    // pendingBuyBackTeamId: null // Don't start buybacks yet
+                    // pendingBuyBackTeamId: null // Don't start buybacks yet,
+                    lastCompletedMatchId: matchId // Track for generic undo
                 });
+            },
+
+            // Undo last completed match (global shortcut helper)
+            undoLastMatch: () => {
+                const { tournament, lastCompletedMatchId } = get();
+                if (!tournament || !lastCompletedMatchId) return;
+
+                // Simply reuse existing restart logic
+                get().restartMatch(lastCompletedMatchId);
+
+                // Clear the reference
+                set({ lastCompletedMatchId: null });
             },
 
             // Set pending buy-back team

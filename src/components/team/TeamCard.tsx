@@ -115,7 +115,8 @@ interface TeamListProps {
     onDelete?: (team: Team) => void;
     onSelect?: (team: Team) => void;
     selectedId?: string;
-    emptyMessage?: string;
+    emptyMessage?: React.ReactNode;
+    emptyAction?: React.ReactNode;
 }
 
 export function TeamList({
@@ -126,12 +127,17 @@ export function TeamList({
     onSelect,
     selectedId,
     emptyMessage = 'No teams added yet',
+    emptyAction
 }: TeamListProps) {
     if (teams.length === 0) {
         return (
-            <div className="text-center py-12 text-[var(--text-muted)]">
-                <div className="text-4xl mb-2">🦁</div>
-                <p>{emptyMessage}</p>
+            <div className="flex flex-col items-center justify-center py-16 px-4 border-2 border-dashed border-white/10 rounded-xl bg-black/20">
+                <div className="text-6xl mb-4 opacity-80">🦁</div>
+                <h3 className="text-xl font-bold text-white mb-2">Ready to Rumble?</h3>
+                <div className="text-[var(--text-muted)] text-center max-w-sm mb-6">
+                    {emptyMessage}
+                </div>
+                {emptyAction}
             </div>
         );
     }

@@ -208,7 +208,18 @@ export function SetupPage() {
                     showActions
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    emptyMessage="No teams yet. Add teams to get started!"
+                    emptyMessage="Add your first team to get this party started!"
+                    emptyAction={
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            className="w-full max-w-xs animate-bounce-subtle"
+                            onClick={() => setShowAddForm(true)}
+                            icon="➕"
+                        >
+                            ADD FIRST TEAM
+                        </Button>
+                    }
                 />
 
                 {/* Start Tournament Button */}
