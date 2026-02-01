@@ -11,6 +11,8 @@ interface MatchNodeProps {
     team1?: Team;
     team2?: Team;
     isActive?: boolean;
+    isFinal?: boolean;
+    readonly?: boolean;
     onSelectWinner?: (teamId: string) => void;
     onUndoMatch?: () => void;
 }
@@ -21,6 +23,7 @@ export function MatchNode({
     team2,
     isActive = false,
     isFinal = false,
+    readonly = false,
     onSelectWinner,
     onUndoMatch,
 }: MatchNodeProps) {
@@ -69,7 +72,7 @@ export function MatchNode({
                     team={team1}
                     isWinner={match.winnerId === team1?.id}
                     isLoser={isComplete && match.winnerId !== team1?.id}
-                    isClickable={isActive && !!team1}
+                    isClickable={!readonly && isActive && !!team1}
                     onClick={() => team1 && onSelectWinner?.(team1.id)}
                 />
 
@@ -85,7 +88,7 @@ export function MatchNode({
                     team={team2}
                     isWinner={match.winnerId === team2?.id}
                     isLoser={isComplete && match.winnerId !== team2?.id}
-                    isClickable={isActive && !!team2}
+                    isClickable={!readonly && isActive && !!team2}
                     onClick={() => team2 && onSelectWinner?.(team2.id)}
                 />
             </div>
@@ -145,11 +148,12 @@ function TeamSlot({ team, isWinner, isLoser, isClickable, onClick }: TeamSlotPro
 
 // Full Bracket View
 interface BracketProps {
+    readonly?: boolean;
     onSelectWinner?: (matchId: string, winnerId: string) => void;
     onUndoMatch?: (matchId: string) => void;
 }
 
-export function Bracket({ onSelectWinner, onUndoMatch }: BracketProps) {
+export function Bracket({ readonly = false, onSelectWinner, onUndoMatch }: BracketProps) {
     const { tournament, getTeamById } = useTournamentStore();
 
     if (!tournament) return null;
@@ -217,6 +221,7 @@ export function Bracket({ onSelectWinner, onUndoMatch }: BracketProps) {
                                             team2={team2}
                                             isActive={isActive}
                                             isFinal={isFinalRound}
+                                            readonly={readonly}
                                             onSelectWinner={(winnerId) =>
                                                 onSelectWinner?.(match.id, winnerId)
                                             }

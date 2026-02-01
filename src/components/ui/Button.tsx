@@ -1,11 +1,12 @@
 // Party Lions - Button Component
 
 import { motion } from 'framer-motion';
-import { ReactNode, ButtonHTMLAttributes } from 'react';
+import type { HTMLMotionProps } from 'framer-motion';
+import type { ReactNode } from 'react';
 
-type ButtonVariant = 'primary' | 'danger' | 'success' | 'buyback' | 'ghost';
+type ButtonVariant = 'primary' | 'danger' | 'success' | 'buyback' | 'ghost' | 'warning';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends HTMLMotionProps<"button"> {
     children: ReactNode;
     variant?: ButtonVariant;
     size?: 'sm' | 'md' | 'lg';
@@ -20,6 +21,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     success: 'btn-success',
     buyback: 'btn-buyback',
     ghost: 'btn-ghost',
+    warning: 'btn-warning',
 };
 
 const sizeClasses = {

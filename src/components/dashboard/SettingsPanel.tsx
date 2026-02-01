@@ -23,6 +23,10 @@ export function SettingsPanel() {
         updateSettings({ [key]: newValue });
     };
 
+    const handleToggleTheme = (color: string) => {
+        updateSettings({ themeColor: color });
+    };
+
     return (
         <motion.div
             className="glass-panel p-6"
@@ -69,6 +73,25 @@ export function SettingsPanel() {
                     enabled={localSettings.enableConfetti}
                     onChange={() => handleToggle('enableConfetti')}
                 />
+
+                {/* Theme Color */}
+                <div className="pt-4 border-t border-[var(--border)]">
+                    <h4 className="text-sm font-medium text-[var(--text-muted)] mb-3">Theme Color</h4>
+                    <div className="flex gap-3">
+                        {['#ffa500', '#ec4899', '#8b5cf6', '#3b82f6', '#10b981'].map(color => (
+                            <button
+                                key={color}
+                                onClick={() => handleToggleTheme(color)}
+                                className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${(tournament.settings.themeColor || '#ffa500') === color
+                                    ? 'border-white scale-110 shadow-lg shadow-white/20'
+                                    : 'border-transparent opacity-80'
+                                    }`}
+                                style={{ backgroundColor: color }}
+                                title={color}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Buy-Back Pricing Info */}

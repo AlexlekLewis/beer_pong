@@ -13,11 +13,12 @@ const DEFAULT_SETTINGS: TournamentSettings = {
     allowBuyBacks: true,
     enableSoundEffects: true,
     enableConfetti: true,
-    wildcardEnabled: true
+    wildcardEnabled: true,
+    themeColor: '#ffa500' // Default Gold
 };
 
 // View types for navigation
-export type ViewType = 'home' | 'setup' | 'tournament' | 'wildcard' | 'results' | 'dashboard';
+export type ViewType = 'home' | 'setup' | 'tournament' | 'wildcard' | 'results' | 'dashboard' | 'tv';
 
 interface TournamentStore {
     // State
@@ -72,6 +73,19 @@ interface TournamentStore {
     getCurrentBuyBackPrice: () => number;
     getWinnersFromCurrentRound: () => string[];
     getEliminatedThisRound: () => Team[];
+    // === TIMER MANAGEMENT ===
+    timer: {
+        isRunning: boolean;
+        endTime: number | null; // Timestamp when timer will end
+        remainingTime: number;  // Time remaining in ms when paused
+        totalDuration: number;  // Initial setup duration
+        type: 'shot' | 'match' | 'custom';
+    };
+
+    startTimer: () => void;
+    pauseTimer: () => void;
+    resetTimer: () => void;
+    setTimerDuration: (durationMs: number, type?: 'shot' | 'match' | 'custom') => void;
     finalizeRound: () => void;
 }
 
@@ -83,6 +97,15 @@ export const useTournamentStore = create<TournamentStore>()(
             pendingBuyBackTeamId: null,
             wildcardResult: null,
             lastCompletedMatchId: null,
+
+            // Timer Initial State
+            timer: {
+                isRunning: false,
+                endTime: null,
+                remainingTime: 600000, // Default 10 minutes
+                totalDuration: 600000,
+                type: 'match'
+            },
 
             // Navigation
             setView: (view) => set({ currentView: view }),
@@ -709,6 +732,67 @@ export const useTournamentStore = create<TournamentStore>()(
                 );
             },
 
+            // === TIMER ACTIONS ===
+            startTimer: () => {
+                const { timer } = get();
+                if (timer.isRunning) return;
+
+                // Calculate target end time
+                // If paused, we use remainingTime. If fresh, it's also remainingTime (synced on reset)
+                const endTime = Date.now() + timer.remainingTime;
+
+                set({
+                    timer: {
+                        ...timer,
+                        isRunning: true,
+                        endTime
+                    }
+                });
+            },
+
+            pauseTimer: () => {
+                const { timer } = get();
+                if (!timer.isRunning || !timer.endTime) return;
+
+                // Calculate remaining time at moment of pause
+                const remainingTime = Math.max(0, timer.endTime - Date.now());
+
+                set({
+                    timer: {
+                        ...timer,
+                        isRunning: false,
+                        endTime: null,
+                        remainingTime
+                    }
+                });
+            },
+
+            resetTimer: () => {
+                const { timer } = get();
+                set({
+                    timer: {
+                        ...timer,
+                        isRunning: false,
+                        endTime: null,
+                        remainingTime: timer.totalDuration
+                    }
+                });
+            },
+
+            setTimerDuration: (durationMs, type) => {
+                const { timer } = get();
+                set({
+                    timer: {
+                        ...timer,
+                        isRunning: false,
+                        endTime: null,
+                        remainingTime: durationMs,
+                        totalDuration: durationMs,
+                        type: type || timer.type
+                    }
+                });
+            },
+
             // Finalize round (explicit trigger)
             finalizeRound: () => {
                 const { tournament } = get();
@@ -742,10 +826,6 @@ export const useTournamentStore = create<TournamentStore>()(
                     // is strictly for transitioning state to 'buy_back_phase' OR advancing if no buybacks.
 
                     if (status === 'in_progress') {
-                        // If we skip buybacks, we just call advanceToNextRound immediately?
-                        // Or we set status to something temporary?
-                        // Let's assume finalizeRound enters the transitional phase.
-
                         // If no buybacks allowed/needed, just advance.
                         get().advanceToNextRound();
                         return;

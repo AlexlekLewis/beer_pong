@@ -6,6 +6,7 @@ import { useTournamentStore } from '../lib/store';
 import { SettingsPanel } from '../components/dashboard/SettingsPanel';
 import { BracketControls } from '../components/dashboard/BracketControls';
 import { Soundboard } from '../components/dashboard/Soundboard';
+import { MatchTimer } from '../components/dashboard/MatchTimer';
 
 export function ModeratorDashboard() {
     const { tournament, setView, resetTournament, exportTournament } = useTournamentStore();
@@ -83,6 +84,11 @@ export function ModeratorDashboard() {
                 {/* Soundboard - Full width on mobile, top priority */}
                 <div className="lg:col-span-2">
                     <Soundboard />
+                </div>
+
+                {/* Match Timer */}
+                <div className="lg:col-span-2">
+                    <MatchTimer />
                 </div>
 
                 {/* Settings Panel */}

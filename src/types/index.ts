@@ -33,6 +33,7 @@ export interface TournamentSettings {
     enableSoundEffects: boolean;
     enableConfetti: boolean;
     wildcardEnabled: boolean;
+    themeColor?: string; // Hex code
 }
 
 export interface Tournament {

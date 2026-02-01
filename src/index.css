@@ -228,6 +228,17 @@ h6 {
     box-shadow: 0 6px 30px var(--purple-glow);
 }
 
+.btn-warning {
+    background: linear-gradient(135deg, var(--warning), var(--fire-orange));
+    color: #0f0a15;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(245, 158, 11, 0.6);
+}
+
 .btn-ghost {
     background: transparent;
     color: var(--text-muted);
@@ -431,6 +442,20 @@ h6 {
 
 .animate-float {
     animation: float 3s ease-in-out infinite;
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+.animate-marquee {
+    animation: marquee 30s linear infinite;
 }
 
 .animate-text-glow {

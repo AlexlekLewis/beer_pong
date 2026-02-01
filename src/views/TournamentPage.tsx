@@ -122,6 +122,10 @@ export function TournamentPage() {
                         Settings
                     </Button>
 
+                    <Button variant="ghost" size="sm" onClick={() => setView('tv')} icon="📺" className="text-[var(--gold-main)] hover:text-white hover:bg-[var(--gold-main)]/20">
+                        TV Mode
+                    </Button>
+
                     <Button variant="ghost" size="sm" onClick={handleExport} icon="💾">
                         Export
                     </Button>
