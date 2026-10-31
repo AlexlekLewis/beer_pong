@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTournamentStore } from '../lib/store';
 import { Bracket } from '../components/bracket/Bracket';
-import { MatchNode } from '../components/bracket/Bracket';
 import type { Team } from '../types';
 
 export function TVModeView() {

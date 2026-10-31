@@ -1,7 +1,7 @@
 // Party Lions - Card Component
 
-import { motion, HTMLMotionProps } from 'framer-motion';
-import { ReactNode } from 'react';
+import { motion, type HTMLMotionProps } from 'framer-motion';
+import { type ReactNode } from 'react';
 
 interface CardProps extends HTMLMotionProps<'div'> {
     children: ReactNode;

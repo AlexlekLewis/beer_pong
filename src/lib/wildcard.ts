@@ -61,8 +61,7 @@ export function getSegmentColor(index: number, total: number): string {
 /**
  * Get contrasting text color for segment
  */
-export function getSegmentTextColor(index: number, total: number): string {
-    const hue = (index * 360) / total;
+export function getSegmentTextColor(_index: number, _total: number): string {
     // Use white for darker segments, dark for lighter
     const lightness = 50;
     return lightness > 50 ? '#1a1a1a' : '#ffffff';

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '../ui/Button';
 import { motion } from 'framer-motion';
 
 // Sound effect definitions
@@ -23,9 +22,10 @@ export function Soundboard() {
             audioRefs.current[sound.id] = audio;
         });
 
+        const audioElements = audioRefs.current;
         return () => {
             // Cleanup
-            Object.values(audioRefs.current).forEach(audio => {
+            Object.values(audioElements).forEach(audio => {
                 audio.pause();
                 audio.src = '';
             });

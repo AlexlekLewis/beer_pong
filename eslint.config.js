@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'src_backup_*', 'src_backup_*/']),
+  globalIgnores(['supabase/functions/', 'dist', 'src_backup_*', 'src_backup_*/']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -15,6 +15,7 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }] },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,

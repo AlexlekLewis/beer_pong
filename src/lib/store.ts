@@ -4,8 +4,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import type { Team, Match, Tournament, TournamentSettings, TournamentStatus } from '../types';
-import { generateBracket, getMatchesForRound, advanceWinner, isRoundComplete, getRoundLosers, generateNextRoundMatches } from './bracket';
+import { generateBracket, getMatchesForRound, advanceWinner, isRoundComplete, generateNextRoundMatches } from './bracket';
 import { getBuyBackPrice, processBuyBacks } from './buyback';
+import type { RegistrationEntry } from './registration-api';
+import { normalizeName, validateName, validateTeamNames, playerNameTaken, availablePlayers } from './registration';
 import { preSelectWildcard } from './wildcard';
 
 // Default settings
@@ -33,6 +35,11 @@ interface TournamentStore {
 
     // Tournament lifecycle
     createTournament: (name: string) => void;
+    acceptRegistration: (entry: RegistrationEntry) => string | null;
+    enableOnlineRegistration: (groupCode?: string) => void;
+    registerPlayer: (name: string) => string | null;
+    registerTeam: (name: string, player1Id: string, player2Id: string) => string | null;
+    removePlayer: (id: string) => void;
     addTeam: (name: string, player1?: string, player2?: string) => void;
     addTeams: (teams: { name: string; player1?: string; player2?: string }[]) => void;
     updateTeam: (id: string, updates: Partial<Pick<Team, 'name' | 'player1' | 'player2'>>) => void;
@@ -57,6 +64,7 @@ interface TournamentStore {
     advanceToNextRound: () => void;
 
     // Moderator controls
+    setRoundBuyBackPrice: (round: number, price: number | null) => string | null;
     updateSettings: (settings: Partial<TournamentSettings>) => void;
     overrideMatchWinner: (matchId: string, newWinnerId: string) => void;
     restartMatch: (matchId: string) => void;
@@ -119,6 +127,7 @@ export const useTournamentStore = create<TournamentStore>()(
                     currentRound: 1,
                     totalRounds: 0,
                     status: 'setup',
+                    players: [],
                     teams: [],
                     matches: [],
                     buyBackBasePrice: 10,
@@ -130,14 +139,73 @@ export const useTournamentStore = create<TournamentStore>()(
                 set({ tournament, currentView: 'setup' });
             },
 
+            enableOnlineRegistration: (groupCode) => {
+                const { tournament } = get();
+                if (tournament?.status === 'setup') set({ tournament: { ...tournament, onlineRegistration: true, registrationGroupCode: groupCode ?? tournament.registrationGroupCode } });
+            },
+
+            acceptRegistration: (entry) => {
+                const { tournament } = get();
+                if (!tournament || tournament.status !== 'setup' || entry.tournament_id !== tournament.id) return 'Registration is closed.';
+                if (tournament.teams.some(team => team.registrationId === entry.id) || (tournament.players ?? []).some(player => player.registrationId === entry.id)) return null;
+                if (entry.kind === 'team') {
+                    const error = validateTeamNames([entry.team_name ?? ''], tournament.teams);
+                    if (error) return error;
+                    if (!entry.player2) return 'Team needs two players.';
+                    for (const name of [entry.player1, entry.player2]) {
+                        if (playerNameTaken(name, tournament.players ?? [], tournament.teams)) return `Player "${name}" is already registered. Resolve the duplicate before accepting.`;
+                    }
+                    const team: Team = { id: uuidv4(), registrationId: entry.id, name: entry.team_name!, player1: entry.player1, player2: entry.player2, status: 'active', buyBackCount: 0, isWildcard: false };
+                    set({ tournament: { ...tournament, teams: [...tournament.teams, team] } });
+                } else {
+                    if (playerNameTaken(entry.player1, tournament.players ?? [], tournament.teams)) return 'This player name is already registered.';
+                    set({ tournament: { ...tournament, players: [...(tournament.players ?? []), { id: uuidv4(), name: entry.player1, registrationId: entry.id }] } });
+                }
+                return null;
+            },
+
+            registerPlayer: (name) => {
+                const { tournament } = get();
+                if (!tournament || tournament.status !== 'setup') return 'Registration is closed.';
+                const error = validateName(name, 'Player name');
+                if (error) return error;
+                if (playerNameTaken(name, tournament.players ?? [], tournament.teams)) return 'This player name is already registered. Use a distinct display name.';
+                set({ tournament: { ...tournament, players: [...(tournament.players ?? []), { id: uuidv4(), name: normalizeName(name) }] } });
+                return null;
+            },
+
+            registerTeam: (name, player1Id, player2Id) => {
+                const { tournament } = get();
+                if (!tournament || tournament.status !== 'setup') return 'Registration is closed.';
+                const error = validateTeamNames([name], tournament.teams);
+                if (error) return error;
+                if (!player1Id || !player2Id || player1Id === player2Id) return 'Select two different players.';
+                const waiting = availablePlayers(tournament.players ?? [], tournament.teams);
+                const player1 = waiting.find(player => player.id === player1Id);
+                const player2 = waiting.find(player => player.id === player2Id);
+                if (!player1 || !player2) return 'One of these players is already assigned or no longer available.';
+                const team: Team = { id: uuidv4(), name: normalizeName(name), player1Id, player2Id,
+                    player1: player1.name, player2: player2.name, status: 'active', buyBackCount: 0, isWildcard: false };
+                set({ tournament: { ...tournament, teams: [...tournament.teams, team] } });
+                return null;
+            },
+
+            removePlayer: (id) => {
+                const { tournament } = get();
+                if (!tournament || tournament.status !== 'setup') return;
+                if (tournament.teams.some(team => team.player1Id === id || team.player2Id === id)) return;
+                set({ tournament: { ...tournament, players: (tournament.players ?? []).filter(player => player.id !== id) } });
+            },
+
             // Add single team
             addTeam: (name, player1, player2) => {
                 const { tournament } = get();
                 if (!tournament || tournament.status !== 'setup') return;
 
+                if (validateTeamNames([name], tournament.teams)) return;
                 const team: Team = {
                     id: uuidv4(),
-                    name,
+                    name: normalizeName(name),
                     player1,
                     player2,
                     status: 'active',
@@ -158,9 +226,10 @@ export const useTournamentStore = create<TournamentStore>()(
                 const { tournament } = get();
                 if (!tournament || tournament.status !== 'setup') return;
 
+                if (validateTeamNames(teams.map(team => team.name), tournament.teams)) return;
                 const newTeams: Team[] = teams.map(t => ({
                     id: uuidv4(),
-                    name: t.name,
+                    name: normalizeName(t.name),
                     player1: t.player1,
                     player2: t.player2,
                     status: 'active',
@@ -179,7 +248,12 @@ export const useTournamentStore = create<TournamentStore>()(
             // Update team
             updateTeam: (id, updates) => {
                 const { tournament } = get();
-                if (!tournament) return;
+                if (!tournament || tournament.status !== 'setup') return;
+                if (updates.name !== undefined && validateTeamNames([updates.name], tournament.teams.filter(team => team.id !== id))) return;
+                const linkedTeam = tournament.teams.find(team => team.id === id);
+                if (linkedTeam?.player1Id || linkedTeam?.player2Id) {
+                    updates = { name: updates.name ?? linkedTeam.name };
+                }
 
                 set({
                     tournament: {
@@ -223,7 +297,7 @@ export const useTournamentStore = create<TournamentStore>()(
             // Start tournament - generate bracket
             startTournament: () => {
                 const { tournament } = get();
-                if (!tournament || tournament.teams.length < 2) return;
+                if (!tournament || tournament.status !== 'setup' || tournament.teams.length < 2) return;
 
                 const { matches, totalRounds } = generateBracket(tournament.teams, true);
 
@@ -244,6 +318,9 @@ export const useTournamentStore = create<TournamentStore>()(
                 const { tournament } = get();
                 if (!tournament) return;
 
+                const target = tournament.matches.find(match => match.id === matchId);
+                if (tournament.status !== 'in_progress' || !target || target.round !== tournament.currentRound || target.status === 'completed' || target.isByeMatch || !target.team1Id || !target.team2Id || ![target.team1Id, target.team2Id].includes(winnerId)) return;
+
                 let matches = tournament.matches.map(m => {
                     if (m.id === matchId) {
                         const loserId = m.team1Id === winnerId ? m.team2Id : m.team1Id;
@@ -263,7 +340,7 @@ export const useTournamentStore = create<TournamentStore>()(
 
                 // Track eliminated team
                 const loserId = completedMatch.loserId;
-                let eliminatedThisRound = [...tournament.eliminatedThisRound];
+                const eliminatedThisRound = [...tournament.eliminatedThisRound];
                 let teams = tournament.teams;
 
                 if (loserId) {
@@ -276,7 +353,6 @@ export const useTournamentStore = create<TournamentStore>()(
                 }
 
                 // Check if round is complete (for UI feedback only, don't change status yet)
-                const roundComplete = isRoundComplete(matches, tournament.currentRound);
 
                 // NO AUTOMATIC STATUS CHANGE HERE
                 // We stay in 'in_progress' until user explicitly clicks "Next Round" / "Buyback Phase"
@@ -362,7 +438,6 @@ export const useTournamentStore = create<TournamentStore>()(
 
                 const winners = get().getWinnersFromCurrentRound();
                 const {
-                    nextRoundPool,
                     needsWildcard,
                     eligibleForWildcard
                 } = processBuyBacks(
@@ -401,7 +476,7 @@ export const useTournamentStore = create<TournamentStore>()(
             // Confirm wildcard selection
             confirmWildcard: () => {
                 const { tournament, wildcardResult } = get();
-                if (!tournament || !wildcardResult) return;
+                if (!tournament || tournament.status !== 'wildcard_phase' || !wildcardResult) return;
 
                 // Update team status
                 const teams = tournament.teams.map(t =>
@@ -412,23 +487,23 @@ export const useTournamentStore = create<TournamentStore>()(
 
                 set({
                     tournament: { ...tournament, teams },
-                    wildcardResult: null
                 });
 
                 get().advanceToNextRound();
+                set({ wildcardResult: null });
             },
 
             // Advance to next round
             advanceToNextRound: () => {
                 const { tournament, wildcardResult } = get();
-                if (!tournament) return;
+                if (!tournament || !isRoundComplete(tournament.matches, tournament.currentRound)) return;
 
                 // Get winners from current round
                 const winners = get().getWinnersFromCurrentRound();
 
                 // Get bought-back teams from decisions
                 const boughtBackTeams = Object.entries(tournament.buyBackDecisions)
-                    .filter(([_, didBuyBack]) => didBuyBack)
+                    .filter(([, didBuyBack]) => didBuyBack)
                     .map(([teamId]) => teamId);
 
                 // Get wildcard team if applicable
@@ -488,6 +563,20 @@ export const useTournamentStore = create<TournamentStore>()(
             },
 
             // === MODERATOR CONTROLS ===
+
+            // null restores the default schedule for this round.
+            setRoundBuyBackPrice: (round, price) => {
+                const { tournament } = get();
+                if (!tournament || tournament.status === 'completed') return 'This tournament is not open for price changes.';
+                if (!Number.isSafeInteger(round) || round < tournament.currentRound) return 'Choose the current round or a future round.';
+                if (round === tournament.currentRound && Object.values(tournament.buyBackDecisions).some(Boolean)) return 'This round’s price is locked because a team has already bought back in.';
+                if (price !== null && (!Number.isFinite(price) || price < 0 || !Number.isSafeInteger(Math.round(price * 100)) || Math.abs(price * 100 - Math.round(price * 100)) > 0.000001)) return 'Enter a non-negative amount with at most two decimal places.';
+                const buyBackRoundPrices = { ...tournament.buyBackRoundPrices };
+                if (price === null) delete buyBackRoundPrices[round];
+                else buyBackRoundPrices[round] = Math.round(price * 100) / 100;
+                set({ tournament: { ...tournament, buyBackRoundPrices } });
+                return null;
+            },
 
             // Update tournament settings
             updateSettings: (settings) => {
@@ -707,7 +796,8 @@ export const useTournamentStore = create<TournamentStore>()(
                 return getBuyBackPrice(
                     tournament.currentRound,
                     tournament.buyBackBasePrice,
-                    tournament.buyBackIncrement
+                    tournament.buyBackIncrement,
+                    tournament.buyBackRoundPrices
                 );
             },
 

@@ -42,7 +42,6 @@ export function generateBracket(teams: Team[], shouldShuffle: boolean = true): {
 
     const bracketSize = nextPowerOf2(numTeams);
     const totalRounds = calculateRounds(bracketSize);
-    const numByes = bracketSize - numTeams;
 
     // Optionally shuffle teams for random seeding
     const seededTeams = shouldShuffle ? shuffleArray([...teams]) : [...teams];
@@ -233,5 +232,11 @@ export function generateNextRoundMatches(
         });
     }
 
+    if (shuffledTeams.length % 2 === 1) {
+        const teamId = shuffledTeams[shuffledTeams.length - 1];
+        newMatches.push({ id: uuidv4(), round: nextRound, position: matchCount,
+            team1Id: teamId, team2Id: null, winnerId: teamId, loserId: null,
+            status: 'completed', isByeMatch: true });
+    }
     return [...existingMatches, ...newMatches];
 }

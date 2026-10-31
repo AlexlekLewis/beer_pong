@@ -1,7 +1,7 @@
 // Party Lions - Bracket Controls Component (Moderator)
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { useTournamentStore } from '../../lib/store';

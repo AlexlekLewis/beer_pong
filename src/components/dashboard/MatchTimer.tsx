@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTournamentStore } from '../../lib/store';
 import { Button } from '../ui/Button';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export function MatchTimer() {
     const { timer, startTimer, pauseTimer, resetTimer, setTimerDuration } = useTournamentStore();

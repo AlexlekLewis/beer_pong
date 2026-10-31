@@ -28,7 +28,6 @@ export function MatchNode({
     onUndoMatch,
 }: MatchNodeProps) {
     const isComplete = match.status === 'completed';
-    const isPending = match.status === 'pending';
 
     return (
         <motion.div

@@ -9,9 +9,15 @@ import { TeamList } from '../components/team/TeamCard';
 import { TeamForm } from '../components/team/TeamForm';
 import { TeamImport } from '../components/team/TeamImport';
 import { useTournamentStore } from '../lib/store';
+import { validateTeamNames } from '../lib/registration';
+import { closeRegistration } from '../lib/registration-api';
+import { PlayerRegistration } from '../components/team/PlayerRegistration';
+import { RegistrationDesk } from '../components/team/RegistrationDesk';
 import type { Team } from '../types';
 
 export function SetupPage() {
+    const [startError, setStartError] = useState('');
+    const [starting, setStarting] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [showImport, setShowImport] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -48,6 +54,8 @@ export function SetupPage() {
 
     const handleSaveEdit = () => {
         if (editingTeam && editName.trim()) {
+            const error = validateTeamNames([editName], tournament.teams.filter(team => team.id !== editingTeam.id));
+            if (error) { setStartError(error); return; }
             updateTeam(editingTeam.id, {
                 name: editName.trim(),
                 player1: editPlayer1.trim() || undefined,
@@ -64,10 +72,16 @@ export function SetupPage() {
         }
     };
 
-    const handleStart = () => {
-        if (tournament.teams.length >= 2) {
+    const handleStart = async () => {
+        if (starting || tournament.teams.length < 2) return;
+        const waiting = (tournament.players ?? []).filter(player => !tournament.teams.some(team => team.player1Id === player.id || team.player2Id === player.id));
+        if (waiting.length && !confirm(`${waiting.length} players are still waiting for a team and will not be in the bracket. Start anyway?`)) return;
+        setStarting(true); setStartError('');
+        try {
+            if (tournament.onlineRegistration) await closeRegistration(tournament.id);
             startTournament();
-        }
+        } catch (error) { setStartError(error instanceof Error ? error.message : 'Could not close registration.'); }
+        finally { setStarting(false); }
     };
 
     const canStart = tournament.teams.length >= 2;
@@ -130,6 +144,8 @@ export function SetupPage() {
             </motion.div>
 
             <div className="max-w-3xl mx-auto">
+                <RegistrationDesk />
+                <PlayerRegistration />
                 {/* Add Team Section */}
                 <AnimatePresence mode="wait">
                     {showAddForm ? (
@@ -222,6 +238,7 @@ export function SetupPage() {
                     }
                 />
 
+                <p role="alert">{startError}</p>
                 {/* Start Tournament Button */}
                 {teamCount > 0 && (
                     <motion.div
@@ -233,12 +250,12 @@ export function SetupPage() {
                             variant="primary"
                             size="lg"
                             fullWidth
-                            disabled={!canStart}
+                            disabled={!canStart || starting}
                             onClick={handleStart}
                             className={canStart ? 'animate-pulse-glow' : ''}
                             icon="🔥"
                         >
-                            START TOURNAMENT
+                            {starting ? 'CLOSING REGISTRATION…' : 'START TOURNAMENT'}
                         </Button>
 
                         <Button
@@ -285,11 +302,13 @@ export function SetupPage() {
                     />
                     <div className="grid grid-cols-2 gap-4">
                         <Input
+                            readOnly={!!editingTeam?.player1Id}
                             label="Player 1"
                             value={editPlayer1}
                             onChange={(e) => setEditPlayer1(e.target.value)}
                         />
                         <Input
+                            readOnly={!!editingTeam?.player2Id}
                             label="Player 2"
                             value={editPlayer2}
                             onChange={(e) => setEditPlayer2(e.target.value)}

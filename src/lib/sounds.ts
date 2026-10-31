@@ -37,7 +37,7 @@ class SoundManager {
                 audio.preload = 'auto';
                 audio.volume = this.volume;
                 this.audioCache.set(key as SoundName, audio);
-            } catch (e) {
+            } catch {
                 console.warn(`Failed to preload sound: ${key}`);
             }
         });

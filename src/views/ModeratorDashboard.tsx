@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { useTournamentStore } from '../lib/store';
+import { RegistrationDesk } from '../components/team/RegistrationDesk';
 import { SettingsPanel } from '../components/dashboard/SettingsPanel';
 import { BracketControls } from '../components/dashboard/BracketControls';
 import { Soundboard } from '../components/dashboard/Soundboard';
@@ -81,6 +82,7 @@ export function ModeratorDashboard() {
 
             {/* Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+                <div className="lg:col-span-2"><RegistrationDesk /></div>
                 {/* Soundboard - Full width on mobile, top priority */}
                 <div className="lg:col-span-2">
                     <Soundboard />

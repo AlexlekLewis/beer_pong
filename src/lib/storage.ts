@@ -122,7 +122,7 @@ export async function clearIndexedDB(): Promise<boolean> {
 
             request.onsuccess = () => resolve(true);
             request.onerror = () => resolve(false);
-        } catch (error) {
+        } catch {
             resolve(false);
         }
     });
@@ -232,7 +232,7 @@ export function importFromFile(file: File): Promise<unknown> {
             try {
                 const data = JSON.parse(e.target?.result as string);
                 resolve(data);
-            } catch (error) {
+            } catch {
                 reject(new Error('Invalid JSON file'));
             }
         };

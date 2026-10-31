@@ -1,0 +1,3 @@
+[functions.group-register]
+# The group code is validated server-side; players do not need user JWTs.
+verify_jwt = false

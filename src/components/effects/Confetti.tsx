@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Shared confetti helpers have no component state. */
 // Party Lions - Confetti Effect Component
 
 import { useEffect, useCallback } from 'react';
@@ -30,7 +31,7 @@ export function useConfetti() {
                     colors: ['#00ff7f', '#ffd700', '#ff1493', '#ff4500'],
                 };
 
-                const interval: NodeJS.Timeout = setInterval(() => {
+                const interval: ReturnType<typeof setInterval> = setInterval(() => {
                     const timeLeft = animationEnd - Date.now();
 
                     if (timeLeft <= 0) {
