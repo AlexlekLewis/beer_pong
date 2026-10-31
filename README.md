@@ -23,7 +23,7 @@ npm test
 1. Create a tournament, then sign in in **Online registration** as organiser.
 2. Click **Open registration**, and share the generated `?register=<tournament-id>` link.
 3. Share the generated group code along with the link. One player enters the code, team name and both teammates’ names; no player email/account is needed. Solo entries remain available.
-4. Refresh the registration desk and accept/reject pending entries. Solo players wait for pairing; team entries enter the roster.
+4. The registration desk refreshes automatically every 5 seconds and when you return to the app. Review pending entries on the Team Roster or organiser dashboard, then accept/reject them. Solo players wait for pairing; team entries enter the roster.
 5. Pair solo players using **Create team from players**. Starting the tournament closes online registration first.
 
 Duplicate team names and overlapping player display names are rejected. Use distinct display names when names collide. Organisers can generate a new code to invalidate the old one; closing registration disables all submissions. Accepted entries can be restored on another organiser device, but match progress requires a downloaded backup.
