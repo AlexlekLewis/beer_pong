@@ -1,84 +1,44 @@
-# 🍺 Pong Royale V2.0
+# Party Lions — Beer Pong Championship
 
-> **The Ultimate Beer Pong Tournament Manager.**  
-> *Now with Cyberpunk/Esport Aesthetics, Strict Rules Engine, and Party Mode.*
+React, TypeScript and Vite tournament manager with a shared player/team registration desk and browser-local tournament management.
 
-![V2 Dashboard Preview](https://via.placeholder.com/800x400?text=Pong+Royale+V2+Dashboard)
+## Run locally
 
-## 🚀 Overview
-
-Pong Royale V2 is a complete rewrite of the original tournament manager, designed to run professional-grade (and chaos-proof) beer pong tournaments. It features a robust state management system, high-contrast "Riot Games" style UI, and safety features for drunk... err, *enthusiastic* admins.
-
-## ✨ Key Features
-
-### 🎮 Gameplay & Rules
--   **Dynamic Bracket**: Automatically pairs teams and advances winners.
--   **Strict Buyback Engine**:
-    -   Teams can *only* buy back in the round they were eliminated.
-    -   **Dynamic Pricing**: Cost increases by **$10 per round** (e.g., Round 3 = $30).
-    -   **Visual Feedback**: Dashboard clearly separates "Eligible" losers from "Permanently Eliminated".
--   **Two-Step Scoring**:
-    -   Avoid accidental clicks! Select a winner -> Review -> Confirm ("VICTORY").
-
-### 🛡️ Admin & Security
--   **State Persistence**: Auto-saves to `localStorage`. Refresh the page without losing the bracket.
--   **Secure Factory Reset**: The "Reset Tournament" button is safely gated. Admins must type **"RESET"** to unlock the destructive action.
-
-### 🎨 Visual Experience
--   **Esport Theme**: Dark blue-grey palette (`#0f171e`) with Indigo (`#6366f1`) and Valorant Red (`#ff4655`) accents.
--   **TV / Spectator Mode**: A dedicated view for the big screen that auto-rotates between:
-    -   Intro / Welcome
-    -   Live "Versus" Matchups
-    -   Full Bracket Tree
-    -   Leaderboard with **Confetti Celebrations**
-
-## 🛠️ Tech Stack
-
--   **Frontend**: React 18, TypeScript, Vite
--   **Styling**: Tailwind CSS, CSS Variables, Custom Animations
--   **State**: React Context + Reducer Architecture
--   **Assets**: Canvas API for particle effects (Confetti)
-
-## ⚡ Quick Start
-
-### Prerequisites
--   Node.js (v18+)
-
-### Installation
-
-```bash
-# Clone the repo
-git clone https://github.com/your-username/pong-royale-v2.git
-
-# Install dependencies
-cd pong-royale-v2
-npm install
-
-# Start the dev server
+```sh
+npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-## 📖 Admin Guide
+The development server runs on port 8080. `.env.example` contains only the new project's public URL and publishable browser key. Never put a service-role or secret key in a `VITE_*` variable.
 
-### 1. Setup Phase
--   Enter team names in the "Registration Deck".
--   Click **"LOCK & START TOURNAMENT"** when ready.
+```sh
+npm run build
+npm run lint
+npm test
+```
 
-### 2. Running Matches
--   The "Live Feed" shows all active matches.
--   Click a team to select them as the **Winner**.
--   Click **"CONFIRM VICTORY"** to finalize.
+## Registration
 
-### 3. Handling Losers
--   When a team loses, they appear in the "Restricted Access / Buyback" list.
--   **IF** they pay the fee ($10 * Round), click **"BUY BACK"** to return them to the active pool for the next round.
--   **WARNING**: If you advance to the next round without buying them back, they are permanently eliminated.
+1. Create a tournament, then sign in in **Online registration** as organiser.
+2. Click **Open registration**, and share the generated `?register=<tournament-id>` link.
+3. Players sign in and submit either a solo entry or a two-player team.
+4. Refresh the registration desk and accept/reject pending entries. Solo players wait for pairing; team entries enter the roster.
+5. Pair solo players using **Create team from players**. Starting the tournament closes online registration first.
 
-### 4. TV Mode
--   Hook a laptop up to the TV.
--   Navigate to `/` and add `?spectator=true` to the URL (or click the link in the footer).
--   Press `F11` for Fullscreen. The app will run itself!
+Submissions are restricted to one entry per account per tournament. Different teammates can use distinct display names when names collide. Accepted entries can be restored on another organiser device, but match progress requires a downloaded backup.
 
----
+## Backend and deployment
 
-*Built with ❤️ (and probably some beer) for the boys.*
+The dedicated Supabase project is **Beer Pong — Party Lions**, ref `fckiszoqqflohpyowhvi`, hosted in Sydney. The checked-in migrations are already applied to that project. For a different backend, apply both migrations in order and change the public environment variables.
+
+Set these variables in the hosting environment before building:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+Configure Supabase Auth's site URL and allowed redirect URLs for the actual deployment. Configure production email delivery and include `{{ .Token }}` in the magic-link email template for the code form. Until then, public email sign-in is not launch-ready. For link-based sign-in, reopen the tournament registration URL after signing in.
+
+Only public event metadata is available without signing in. Database RLS and column grants limit submissions and approval to their intended actors. Match administration remains local to the organiser's browser.
+
+See [AUDIT.md](AUDIT.md) for verified fixes, dependency findings and remaining launch requirements.

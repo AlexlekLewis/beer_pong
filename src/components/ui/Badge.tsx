@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Stateless status helper shared by badges. */
 // Party Lions - Badge Component
 
 import { motion } from 'framer-motion';
@@ -40,7 +41,7 @@ export function Badge({
     const animationProps = animated ? {
         initial: { scale: 0 },
         animate: { scale: 1 },
-        transition: { type: 'spring', damping: 10, stiffness: 200 }
+        transition: { type: 'spring' as const, damping: 10, stiffness: 200 }
     } : {};
 
     return (

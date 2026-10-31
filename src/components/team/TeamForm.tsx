@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useTournamentStore } from '../../lib/store';
+import { validateTeamNames } from '../../lib/registration';
 import { parseQuickAdd } from '../../lib/import';
 
 interface TeamFormProps {
@@ -30,6 +31,9 @@ export function TeamForm({ onSuccess, mode: initialMode = 'single' }: TeamFormPr
             setError('Team name is required');
             return;
         }
+
+        const validation = validateTeamNames([name], tournament?.teams ?? []);
+        if (validation) { setError(validation); return; }
 
         // Check for duplicate names
         if (tournament?.teams.some(t => t.name.toLowerCase() === name.trim().toLowerCase())) {
@@ -67,6 +71,9 @@ export function TeamForm({ onSuccess, mode: initialMode = 'single' }: TeamFormPr
             setError(`Duplicate names: ${duplicates.join(', ')}`);
             return;
         }
+
+        const validation = validateTeamNames(teamNames, tournament?.teams ?? []);
+        if (validation) { setError(validation); return; }
 
         const newTeams = teamNames.map(n => ({ name: n }));
         addTeams(newTeams);
@@ -106,6 +113,7 @@ export function TeamForm({ onSuccess, mode: initialMode = 'single' }: TeamFormPr
             {mode === 'single' ? (
                 <form onSubmit={handleSubmitSingle} className="space-y-4">
                     <Input
+                        maxLength={60}
                         label="Team Name"
                         placeholder="Enter team name..."
                         value={name}

@@ -1,6 +1,6 @@
 // Party Lions - Lottery Wheel Component
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Team } from '../../types';
 import { calculateWheelRotation, getSegmentColor } from '../../lib/wildcard';

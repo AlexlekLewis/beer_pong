@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '../ui/Button';
 import { useTournamentStore } from '../../lib/store';
 
 export function SettingsPanel() {

@@ -1,6 +1,6 @@
 // Party Lions - Input Component
 
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { type InputHTMLAttributes, forwardRef, useId } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -10,10 +10,12 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ label, error, icon, className = '', ...props }, ref) => {
+        const generatedId = useId();
+        const id = props.id ?? generatedId;
         return (
             <div className="w-full">
                 {label && (
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
+                    <label htmlFor={id} className="block text-sm font-medium text-[var(--text-muted)] mb-2">
                         {label}
                     </label>
                 )}
@@ -24,13 +26,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         </span>
                     )}
                     <input
+                        id={id}
+                        aria-invalid={!!error}
+                        aria-describedby={error ? `${id}-error` : undefined}
                         ref={ref}
                         className={`input ${icon ? 'pl-10' : ''} ${error ? 'border-[var(--danger)]' : ''} ${className}`}
                         {...props}
                     />
                 </div>
                 {error && (
-                    <p className="mt-1 text-sm text-[var(--danger)]">{error}</p>
+                    <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-[var(--danger)]">{error}</p>
                 )}
             </div>
         );
@@ -47,10 +52,12 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ({ label, error, className = '', ...props }, ref) => {
+        const generatedId = useId();
+        const id = props.id ?? generatedId;
         return (
             <div className="w-full">
                 {label && (
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
+                    <label htmlFor={id} className="block text-sm font-medium text-[var(--text-muted)] mb-2">
                         {label}
                     </label>
                 )}
@@ -60,7 +67,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                     {...props}
                 />
                 {error && (
-                    <p className="mt-1 text-sm text-[var(--danger)]">{error}</p>
+                    <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-[var(--danger)]">{error}</p>
                 )}
             </div>
         );

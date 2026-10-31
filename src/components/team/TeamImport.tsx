@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { useTournamentStore } from '../../lib/store';
 import { importSpreadsheet, getAcceptedFileTypes, isValidFileType } from '../../lib/import';
+import { validateTeamNames } from '../../lib/registration';
 import type { ImportResult } from '../../types';
 
 interface TeamImportProps {
@@ -43,7 +44,7 @@ export function TeamImport({ onSuccess, onCancel }: TeamImportProps) {
             } else {
                 setError(importResult.errors.join('\n') || 'No teams found in file');
             }
-        } catch (err) {
+        } catch {
             setError('Failed to read file');
         } finally {
             setLoading(false);
@@ -53,6 +54,10 @@ export function TeamImport({ onSuccess, onCancel }: TeamImportProps) {
     const handleConfirmImport = () => {
         if (!result?.teams) return;
 
+        const tournament = useTournamentStore.getState().tournament;
+        if (!tournament || tournament.status !== 'setup') { setError('Registration is closed.'); return; }
+        const validation = validateTeamNames(result.teams.map(team => team.name), tournament.teams);
+        if (validation) { setError(validation); return; }
         addTeams(result.teams);
         setStep('done');
 

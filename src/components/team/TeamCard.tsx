@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import type { Team } from '../../types';
 import { StatusBadge } from '../ui/Badge';
-import { Button } from '../ui/Button';
 
 interface TeamCardProps {
     team: Team;

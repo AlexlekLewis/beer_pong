@@ -6,12 +6,13 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useTournamentStore } from '../lib/store';
+import { validateTeamNames } from '../lib/registration';
 import { importSpreadsheet } from '../lib/import';
 
 export function HomePage() {
     const [showNewModal, setShowNewModal] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
-    const [loadMode, setLoadMode] = useState<'teams' | 'tournament'>('teams');
+    const [, setLoadMode] = useState<'teams' | 'tournament'>('teams');
     const [tournamentName, setTournamentName] = useState('');
     const [importJson, setImportJson] = useState('');
     const [importError, setImportError] = useState('');
@@ -60,13 +61,17 @@ export function HomePage() {
                 if (!tournament) {
                     createTournament(file.name.replace(/\.[^/.]+$/, '') || 'Imported Tournament');
                 }
+                const current = useTournamentStore.getState().tournament;
+                if (current?.status !== 'setup') { setImportError('Team imports are only available before the tournament starts.'); return; }
+                const validation = validateTeamNames(result.teams.map(team => team.name), current.teams);
+                if (validation) { setImportError(validation); return; }
                 addTeams(result.teams);
                 setShowLoadModal(false);
                 setView('setup');
             } else {
                 setImportError(result.errors.join('\n') || 'No teams found in file');
             }
-        } catch (err) {
+        } catch {
             setImportError('Failed to read file');
         }
 

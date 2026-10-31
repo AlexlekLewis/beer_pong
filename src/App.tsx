@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useTournamentStore } from './lib/store';
+import { RegistrationPage } from './views/RegistrationPage';
 import { HomePage } from './views/HomePage';
 import { SetupPage } from './views/SetupPage';
 import { TournamentPage } from './views/TournamentPage';
@@ -38,6 +39,9 @@ function App() {
             root.style.removeProperty('--gold-light');
         }
     }, [tournament?.settings.themeColor]);
+
+    const registrationId = new URLSearchParams(window.location.search).get('register');
+    if (registrationId) return <RegistrationPage eventId={registrationId} />;
 
     // Redirect to home if no tournament for views that require one
     const requiresTournament = ['setup', 'tournament', 'wildcard', 'results', 'dashboard'];

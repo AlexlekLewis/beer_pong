@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
-import { Badge, StatusBadge } from '../components/ui/Badge';
+import { Badge } from '../components/ui/Badge';
 import { useTournamentStore } from '../lib/store';
 import { fireWinnerConfetti } from '../components/effects/Confetti';
 import { useEffect } from 'react';

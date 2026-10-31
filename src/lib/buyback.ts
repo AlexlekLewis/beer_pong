@@ -1,6 +1,6 @@
 // Party Lions - Buy-Back System Logic
 
-import type { Team, Tournament } from '../types';
+import type { Team } from '../types';
 
 /**
  * Calculate buy-back price for a given round
@@ -29,7 +29,7 @@ export function processBuyBacks(
     teams: Team[],
     winners: string[],
     buyBackDecisions: Record<string, boolean>,
-    currentRound: number
+    _currentRound: number
 ): {
     nextRoundPool: string[];
     boughtBackTeams: string[];
