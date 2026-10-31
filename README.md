@@ -43,7 +43,7 @@ Set these variables in the hosting environment before building:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Organiser sign-in still uses Supabase Auth. Configure its site URL and allowed redirect URLs for the actual deployment. Configure production email delivery and include `{{ .Token }}` in the magic-link email template for the code form. These email settings are only needed for organiser sign-in; player submissions use the group code. For link-based sign-in, reopen the tournament registration URL after signing in.
+Organiser sign-in still uses Supabase Auth. Configure its site URL and allowed redirect URLs for the actual deployment. Configure production email delivery and include `{{ .Token }}` in the magic-link email template for the code form. The live project’s site URL is configured to https://beer-pong-party-lions.vercel.app and both sign-in/confirmation templates include the one-time code. These email settings are only needed for organiser sign-in; player submissions use the group code. Organiser email still uses Supabase’s restricted built-in sender; configure custom SMTP for broader delivery. For link-based sign-in, reopen the tournament registration URL after signing in.
 
 Only public event metadata is readable without signing in. The `group-register` Edge Function validates the group code through a service-only SQL function before inserting a pending entry. Code hashes are readable and writable only by the event owner. Anonymous browsers cannot insert directly, list entries or approve teams. Match administration remains local to the organiser's browser.
 
