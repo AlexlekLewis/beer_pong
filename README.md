@@ -28,6 +28,12 @@ npm test
 
 Submissions are restricted to one entry per account per tournament. Different teammates can use distinct display names when names collide. Accepted entries can be restored on another organiser device, but match progress requires a downloaded backup.
 
+## Round buy-in / buy-back amounts
+
+In **Settings → Round buy-in / buy-back pricing**, select the current or a future round and save its team re-entry amount. Zero and amounts with cents are supported. **Use default** restores the original base-plus-increment schedule for that round. Past rounds and the current round after its first successful buy-back are locked. Custom amounts persist with tournament data and backups and appear in both the match header and buy-back confirmation.
+
+These amounts are re-entry fees for eliminated teams. The app does not charge an initial registration fee or process payments.
+
 ## Backend and deployment
 
 The dedicated Supabase project is **Beer Pong — Party Lions**, ref `fckiszoqqflohpyowhvi`, hosted in Sydney. The checked-in migrations are already applied to that project. For a different backend, apply both migrations in order and change the public environment variables.

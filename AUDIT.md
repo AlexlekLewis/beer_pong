@@ -28,7 +28,7 @@ Scope: current React/Zustand application, tournament state transitions, dependen
 
 ## Verified
 
-`npm run build`, `npm run lint`, and `npm test` pass. Seven tests cover registration, roster identity, duplicate/closed registration, idempotent acceptance, wildcard retention, odd pools, invalid match results and database access rules. Database tests execute real PostgreSQL using PGlite with application roles and RLS enabled.
+`npm run build`, `npm run lint`, and `npm test` pass. Nine tests cover registration, roster identity, duplicate/closed registration, idempotent acceptance, wildcard retention, odd pools, invalid match results database access rules, custom round prices, restored defaults and price locking. Database tests execute real PostgreSQL using PGlite with application roles and RLS enabled.
 
 Live Supabase transaction verified submission, cross-user privacy, owner approval and rejection of submissions to closed events; test fixtures were rolled back. Supabase security advisors returned no findings. Browser verified solo registration, two-player pairing and roster rendering.
 

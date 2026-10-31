@@ -64,6 +64,7 @@ interface TournamentStore {
     advanceToNextRound: () => void;
 
     // Moderator controls
+    setRoundBuyBackPrice: (round: number, price: number | null) => string | null;
     updateSettings: (settings: Partial<TournamentSettings>) => void;
     overrideMatchWinner: (matchId: string, newWinnerId: string) => void;
     restartMatch: (matchId: string) => void;
@@ -563,6 +564,20 @@ export const useTournamentStore = create<TournamentStore>()(
 
             // === MODERATOR CONTROLS ===
 
+            // null restores the default schedule for this round.
+            setRoundBuyBackPrice: (round, price) => {
+                const { tournament } = get();
+                if (!tournament || tournament.status === 'completed') return 'This tournament is not open for price changes.';
+                if (!Number.isSafeInteger(round) || round < tournament.currentRound) return 'Choose the current round or a future round.';
+                if (round === tournament.currentRound && Object.values(tournament.buyBackDecisions).some(Boolean)) return 'This round’s price is locked because a team has already bought back in.';
+                if (price !== null && (!Number.isFinite(price) || price < 0 || !Number.isSafeInteger(Math.round(price * 100)) || Math.abs(price * 100 - Math.round(price * 100)) > 0.000001)) return 'Enter a non-negative amount with at most two decimal places.';
+                const buyBackRoundPrices = { ...tournament.buyBackRoundPrices };
+                if (price === null) delete buyBackRoundPrices[round];
+                else buyBackRoundPrices[round] = Math.round(price * 100) / 100;
+                set({ tournament: { ...tournament, buyBackRoundPrices } });
+                return null;
+            },
+
             // Update tournament settings
             updateSettings: (settings) => {
                 const { tournament } = get();
@@ -781,7 +796,8 @@ export const useTournamentStore = create<TournamentStore>()(
                 return getBuyBackPrice(
                     tournament.currentRound,
                     tournament.buyBackBasePrice,
-                    tournament.buyBackIncrement
+                    tournament.buyBackIncrement,
+                    tournament.buyBackRoundPrices
                 );
             },
 

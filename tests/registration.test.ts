@@ -81,3 +81,27 @@ describe('tournament audit regressions', () => {
         expect(store.getState().tournament!.eliminatedThisRound).toHaveLength(1);
     });
 });
+
+describe('organiser round buy-in amounts', () => {
+    it('uses custom round amounts including free entry, and restores defaults', () => {
+        expect(store.getState().getCurrentBuyBackPrice()).toBe(10);
+        expect(store.getState().setRoundBuyBackPrice(1, 12.50)).toBeNull();
+        expect(store.getState().getCurrentBuyBackPrice()).toBe(12.50);
+        expect(store.getState().setRoundBuyBackPrice(2, 0)).toBeNull();
+        const json = store.getState().exportTournament();
+        store.getState().resetTournament(); store.getState().importTournament(json);
+        expect(store.getState().tournament!.buyBackRoundPrices).toEqual({ 1: 12.5, 2: 0 });
+        store.setState({ tournament: { ...store.getState().tournament!, currentRound: 2 } });
+        expect(store.getState().getCurrentBuyBackPrice()).toBe(0);
+        expect(store.getState().setRoundBuyBackPrice(2, null)).toBeNull();
+        expect(store.getState().getCurrentBuyBackPrice()).toBe(20);
+    });
+    it('rejects invalid prices and locks paid or past rounds', () => {
+        for (const amount of [-1, NaN, Infinity, 1.234]) expect(store.getState().setRoundBuyBackPrice(1, amount)).not.toBeNull();
+        expect(store.getState().setRoundBuyBackPrice(1.5, 20)).not.toBeNull();
+        store.setState({ tournament: { ...store.getState().tournament!, currentRound: 2, buyBackDecisions: { paid: true } } });
+        expect(store.getState().setRoundBuyBackPrice(1, 20)).not.toBeNull();
+        expect(store.getState().setRoundBuyBackPrice(2, 20)).toMatch(/locked/);
+        expect(store.getState().setRoundBuyBackPrice(3, 25)).toBeNull();
+    });
+});

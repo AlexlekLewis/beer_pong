@@ -10,9 +10,10 @@ import type { Team } from '../types';
 export function getBuyBackPrice(
     round: number,
     basePrice: number = 10,
-    increment: number = 10
+    increment: number = 10,
+    roundPrices: Record<number, number> = {}
 ): number {
-    return basePrice + (round - 1) * increment;
+    return roundPrices[round] ?? basePrice + (round - 1) * increment;
 }
 
 /**

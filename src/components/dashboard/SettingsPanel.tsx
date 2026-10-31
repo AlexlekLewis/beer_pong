@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { RoundPricing } from './RoundPricing';
 import { useTournamentStore } from '../../lib/store';
 
 export function SettingsPanel() {
@@ -93,23 +94,7 @@ export function SettingsPanel() {
                 </div>
             </div>
 
-            {/* Buy-Back Pricing Info */}
-            <div className="mt-6 pt-6 border-t border-[var(--border)]">
-                <h4 className="text-sm font-medium text-[var(--text-muted)] mb-3">Buy-Back Pricing</h4>
-                <div className="bg-[var(--bg-elevated)] rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-white">Base Price:</span>
-                        <span className="text-[var(--gold-main)] font-bold">${tournament.buyBackBasePrice}</span>
-                    </div>
-                    <div className="flex justify-between items-center mt-2">
-                        <span className="text-white">Per Round Increase:</span>
-                        <span className="text-[var(--gold-main)] font-bold">+${tournament.buyBackIncrement}</span>
-                    </div>
-                    <p className="text-xs text-[var(--text-dim)] mt-2">
-                        Round 1: ${tournament.buyBackBasePrice} → Round 2: ${tournament.buyBackBasePrice + tournament.buyBackIncrement} → Round 3: ${tournament.buyBackBasePrice + tournament.buyBackIncrement * 2}...
-                    </p>
-                </div>
-            </div>
+            <RoundPricing key={tournament.id} />
         </motion.div>
     );
 }

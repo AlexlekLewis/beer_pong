@@ -115,6 +115,7 @@ export function TournamentPage() {
                             round={tournament.currentRound}
                             basePrice={tournament.buyBackBasePrice}
                             increment={tournament.buyBackIncrement}
+                            roundPrices={tournament.buyBackRoundPrices}
                         />
                     )}
 

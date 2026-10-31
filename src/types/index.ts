@@ -58,6 +58,7 @@ export interface Tournament {
     matches: Match[];
     buyBackBasePrice: number;
     buyBackIncrement: number;
+    buyBackRoundPrices?: Record<number, number>;
     settings: TournamentSettings;
     eliminatedThisRound: string[]; // Team IDs eliminated in current round
     buyBackDecisions: Record<string, boolean>; // teamId -> bought back?

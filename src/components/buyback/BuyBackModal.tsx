@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useTournamentStore } from '../../lib/store';
-import { formatPrice } from '../../lib/buyback';
+import { formatPrice, getBuyBackPrice } from '../../lib/buyback';
 
 interface BuyBackModalProps {
     isOpen: boolean;
@@ -123,10 +123,11 @@ interface PriceDisplayProps {
     round: number;
     basePrice?: number;
     increment?: number;
+    roundPrices?: Record<number, number>;
 }
 
-export function PriceDisplay({ round, basePrice = 10, increment = 10 }: PriceDisplayProps) {
-    const price = basePrice + (round - 1) * increment;
+export function PriceDisplay({ round, basePrice = 10, increment = 10, roundPrices }: PriceDisplayProps) {
+    const price = getBuyBackPrice(round, basePrice, increment, roundPrices);
 
     return (
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--purple-main)]/20 border border-[var(--purple-main)] rounded-lg">
