@@ -36,7 +36,7 @@ interface TournamentStore {
     // Tournament lifecycle
     createTournament: (name: string) => void;
     acceptRegistration: (entry: RegistrationEntry) => string | null;
-    enableOnlineRegistration: () => void;
+    enableOnlineRegistration: (groupCode?: string) => void;
     registerPlayer: (name: string) => string | null;
     registerTeam: (name: string, player1Id: string, player2Id: string) => string | null;
     removePlayer: (id: string) => void;
@@ -139,9 +139,9 @@ export const useTournamentStore = create<TournamentStore>()(
                 set({ tournament, currentView: 'setup' });
             },
 
-            enableOnlineRegistration: () => {
+            enableOnlineRegistration: (groupCode) => {
                 const { tournament } = get();
-                if (tournament?.status === 'setup') set({ tournament: { ...tournament, onlineRegistration: true } });
+                if (tournament?.status === 'setup') set({ tournament: { ...tournament, onlineRegistration: true, registrationGroupCode: groupCode ?? tournament.registrationGroupCode } });
             },
 
             acceptRegistration: (entry) => {

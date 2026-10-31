@@ -1,16 +1,14 @@
-import { useRegistrationUser } from '../lib/useRegistrationUser';
 import { useEffect, useState } from 'react';
-import { registrationClient } from '../lib/registration-api';
+import { registrationClient, submitGroupEntry } from '../lib/registration-api';
 import { normalizeName, validateName } from '../lib/registration';
-import { RegistrationLogin } from '../components/team/RegistrationLogin';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 
 export function RegistrationPage({ eventId }: { eventId: string }) {
-    const userId = useRegistrationUser();
+    const [code, setCode] = useState('');
     const [event, setEvent] = useState<{ name: string; is_open: boolean } | null>(null);
     const [loading, setLoading] = useState(true);
-    const [kind, setKind] = useState<'player' | 'team'>('player');
+    const [kind, setKind] = useState<'player' | 'team'>('team');
     const [name, setName] = useState('');
     const [first, setFirst] = useState('');
     const [second, setSecond] = useState('');
@@ -36,25 +34,28 @@ export function RegistrationPage({ eventId }: { eventId: string }) {
                 : loading ? <p role="status">Loading registration…</p>
                 : !event ? <p role="alert">{message}</p>
                 : !event.is_open ? <p>Registration is closed. Contact the organiser for help.</p>
-                : !userId ? <><p>Sign in to register yourself or a two-player team. Your email is used for sign-in and is not shown on the roster.</p><RegistrationLogin /></>
                 : submitted ? <div role="status"><h2 className="font-bold text-xl">You’re on the list!</h2><p>Your entry is awaiting organiser approval. Solo players will be paired into teams.</p></div>
                 : <form className="space-y-4" onSubmit={async e => {
                     e.preventDefault();
                     if (!registrationClient || busy) return;
+                    if (!code.trim()) { setMessage('Enter the group code from your organiser.'); return; }
                     const error = validateName(first, 'Player name') ?? (kind === 'team' ? validateName(name, 'Team name') ?? validateName(second, 'Second player name') : null);
                     if (error) { setMessage(error); return; }
                     if (kind === 'team' && normalizeName(first).toLowerCase() === normalizeName(second).toLowerCase()) { setMessage('Use two different player display names.'); return; }
                     setBusy(true); setMessage('');
-                    const { error: saveError } = await registrationClient.from('registration_entries').insert({ tournament_id: eventId, submitted_by: userId, kind, team_name: kind === 'team' ? normalizeName(name) : null, player1: normalizeName(first), player2: kind === 'team' ? normalizeName(second) : null });
-                    setBusy(false);
-                    if (saveError) setMessage(saveError.code === '23505' ? 'You or this team are already registered for this tournament.' : 'Could not register. Registration may have closed; refresh and try again.');
-                    else setSubmitted(true);
+                    try {
+                        await submitGroupEntry({ eventId, code: code.trim(), kind, teamName: normalizeName(name), player1: normalizeName(first), player2: normalizeName(second) });
+                        setSubmitted(true);
+                    } catch (error) { setMessage(error instanceof Error ? error.message : 'Could not register. Please try again.'); }
+                    finally { setBusy(false); }
                 }}>
+                    <p className="text-sm text-[var(--text-muted)]">One person can register the pair. Use the group code shared by your organiser — no email or account needed.</p>
+                    <Input label="Group code" required maxLength={32} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="XXXX-XXXX-XXXX" value={code} onChange={e => setCode(e.target.value)} />
                     <label className="block">Registration type<select className="input mt-2" value={kind} onChange={e => setKind(e.target.value as 'player' | 'team')}><option value="player">Solo player — find me a teammate</option><option value="team">Two-player team</option></select></label>
                     {kind === 'team' && <Input label="Team name" required maxLength={60} value={name} onChange={e => setName(e.target.value)} />}
                     <Input label={kind === 'team' ? 'Player 1 display name' : 'Your display name'} required maxLength={60} value={first} onChange={e => setFirst(e.target.value)} />
                     {kind === 'team' && <Input label="Player 2 display name" required maxLength={60} value={second} onChange={e => setSecond(e.target.value)} />}
-                    <p className="text-sm text-[var(--text-muted)]">Entries are reviewed by the organiser before joining the bracket. Each signed-in account can submit one entry per tournament.</p>
+                    <p className="text-sm text-[var(--text-muted)]">Submit once per pair. Entries are reviewed by the organiser before joining the bracket. Use distinct player display names.</p>
                     <p role="alert" className="text-sm">{message}</p>
                     <Button type="submit" fullWidth disabled={busy}>{busy ? 'Registering…' : 'Register'}</Button>
                 </form>}

@@ -1,6 +1,6 @@
 import { useRegistrationUser } from '../../lib/useRegistrationUser';
 import { useCallback, useEffect, useState } from 'react';
-import { registrationClient, registrationLink, closeRegistration, type RegistrationEntry } from '../../lib/registration-api';
+import { registrationClient, registrationLink, closeRegistration, generateGroupCode, saveGroupCode, type RegistrationEntry } from '../../lib/registration-api';
 import { useTournamentStore } from '../../lib/store';
 import { RegistrationLogin } from './RegistrationLogin';
 import { Button } from '../ui/Button';
@@ -39,20 +39,34 @@ export function RegistrationDesk() {
             : <>
                 <p className="text-sm">Open a shared sign-up link, then refresh here to review entries. Accepted entries are saved in this browser’s tournament; keep a backup before changing devices.</p>
                 <div className="flex flex-wrap gap-3">
-                    <Button disabled={busy} onClick={() => void run(async () => {
+                    <Button disabled={busy || isOpen} onClick={() => void run(async () => {
                         const { data: existing, error: readError } = await client!.from('registration_events').select('owner_id').eq('id', tournament.id).maybeSingle();
                         if (readError) throw readError;
                         if (existing && existing.owner_id !== userId) throw new Error('Sign in with the organiser account that opened this tournament.');
-                        const result = existing
-                            ? await client!.from('registration_events').update({ name: tournament.name, is_open: true }).eq('id', tournament.id).select('id').single()
-                            : await client!.from('registration_events').insert({ id: tournament.id, name: tournament.name, owner_id: userId }).select('id').single();
-                        if (result.error) throw result.error;
-                        enableOnlineRegistration();
+                        if (!existing) {
+                            const { error } = await client!.from('registration_events').insert({ id: tournament.id, name: tournament.name, owner_id: userId });
+                            if (error) throw error;
+                        }
+                        const code = generateGroupCode();
+                        await saveGroupCode(tournament.id, code);
+                        const { error } = await client!.from('registration_events').update({ name: tournament.name, is_open: true }).eq('id', tournament.id).select('id').single();
+                        if (error) throw error;
+                        enableOnlineRegistration(code);
                     })}>Open registration</Button>
                     <Button variant="ghost" disabled={busy} onClick={() => void run(load)}>Refresh entries</Button>
+                    {isOpen && <Button variant="ghost" disabled={busy} onClick={() => void run(async () => {
+                        if (tournament.registrationGroupCode && !confirm('Replace the group code? The old code will stop working.')) return;
+                        const code = generateGroupCode();
+                        await saveGroupCode(tournament.id, code);
+                        enableOnlineRegistration(code);
+                    })}>Generate new group code</Button>}
                     {isOpen && <Button variant="ghost" disabled={busy} onClick={() => void run(() => closeRegistration(tournament.id))}>Close registration</Button>}
                 </div>
                 {isOpen && <label className="block text-sm">Share this link with players<input className="input mt-2" readOnly value={registrationLink(tournament.id)} onFocus={event => event.target.select()} /><a className="underline inline-block mt-2" href={registrationLink(tournament.id)} target="_blank" rel="noreferrer">Preview registration page</a></label>}
+                {isOpen && <div className="space-y-2">
+                    {tournament.registrationGroupCode ? <label className="block text-sm">Group code<input className="input mt-2 font-mono tracking-widest" readOnly value={tournament.registrationGroupCode} onFocus={event => event.target.select()} /></label> : <p>Generate a new group code for this device before sharing.</p>}
+                    <p className="text-sm text-[var(--text-muted)]">Share the link and code in your group chat. One person registers both teammates; players do not need an account. Closing registration disables the code.</p>
+                </div>}
                 <h3 className="font-bold">Pending entries ({entries.filter(entry => entry.status === 'pending').length})</h3>
                 <ul className="space-y-3">{entries.filter(entry => entry.status === 'pending').map(entry => <li key={entry.id} className="border border-[var(--border)] rounded p-3 space-y-2">
                     <p>{entry.kind === 'team' ? entry.team_name : 'Solo player'} — {entry.player1}{entry.player2 ? ` & ${entry.player2}` : ''}</p>

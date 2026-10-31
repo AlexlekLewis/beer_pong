@@ -53,6 +53,7 @@ export interface Tournament {
     totalRounds: number;
     status: TournamentStatus;
     onlineRegistration?: boolean;
+    registrationGroupCode?: string;
     players?: Player[]; // Optional for backups created before player registration
     teams: Team[];
     matches: Match[];
